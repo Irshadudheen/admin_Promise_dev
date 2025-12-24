@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
-import { Button } from './components/ui/button'
+import Home from './pages/Home'
+import NotFound from './pages/NotFound'
 
 function App() {
-
   return (
-    <>
-      <Button>click me</Button>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
