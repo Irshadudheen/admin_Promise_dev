@@ -81,15 +81,15 @@ export default function Students() {
                                     <div className="flex gap-2 justify-end">
                                         <Button size="sm" variant="outline" onClick={() => { setSelectedStudent(student); setIsViewModalOpen(true) }} className="gap-1">
                                             <Eye className="w-3 h-3" />
-                                            View
+                                            
                                         </Button>
                                         <Button size="sm" variant="outline" onClick={() => { setSelectedStudent(student); setIsEditModalOpen(true) }} className="gap-1">
                                             <Edit className="w-3 h-3" />
-                                            Edit
+                                            
                                         </Button>
                                         <Button size="sm" variant="destructive" onClick={() => { setSelectedStudent(student); setIsDeleteDialogOpen(true) }} className="gap-1">
                                             <Trash2 className="w-3 h-3" />
-                                            Delete
+                                            
                                         </Button>
                                     </div>
                                 </TableCell>

@@ -91,7 +91,7 @@ export default function Roles() {
                     </div>
                     <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
                         <Plus className="w-4 h-4" />
-                        Create Role
+                        
                     </Button>
                 </div>
             </div>
@@ -129,7 +129,7 @@ export default function Roles() {
                                             className="gap-1"
                                         >
                                             <Edit className="w-3 h-3" />
-                                            Edit
+                                            
                                         </Button>
                                         <Button
                                             size="sm"
@@ -138,7 +138,7 @@ export default function Roles() {
                                             className="gap-1"
                                         >
                                             <Trash2 className="w-3 h-3" />
-                                            Delete
+                                            
                                         </Button>
                                     </div>
                                 </TableCell>

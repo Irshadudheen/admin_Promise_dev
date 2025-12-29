@@ -74,15 +74,15 @@ export default function Clinistinction() {
                                     <div className="flex gap-2 justify-end">
                                         <Button size="sm" variant="outline" onClick={() => { setSelectedItem(item); setIsViewModalOpen(true) }} className="gap-1">
                                             <Eye className="w-3 h-3" />
-                                            View
+                                            
                                         </Button>
                                         <Button size="sm" variant="outline" className="gap-1">
                                             <Edit className="w-3 h-3" />
-                                            Edit
+                                            
                                         </Button>
                                         <Button size="sm" variant="destructive" onClick={() => { setSelectedItem(item); setIsDeleteDialogOpen(true) }} className="gap-1">
                                             <Trash2 className="w-3 h-3" />
-                                            Delete
+                                            
                                         </Button>
                                     </div>
                                 </TableCell>
