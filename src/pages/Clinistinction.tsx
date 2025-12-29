@@ -6,6 +6,8 @@ import { Modal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/ui/Toast'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table'
+import { Pagination } from '@/components/ui/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 import { mockClinistinction } from '@/data/mockData'
 import type { Clinistinction } from '@/types'
 
@@ -21,6 +23,8 @@ export default function Clinistinction() {
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.category.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    const pagination = usePagination({ items: filteredItems, initialItemsPerPage: 10 })
 
     const handleDelete = () => {
         if (!selectedItem) return
@@ -43,7 +47,8 @@ export default function Clinistinction() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-lg border border-border shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -57,7 +62,7 @@ export default function Clinistinction() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredItems.map((item) => (
+                        {pagination.currentItems.map((item) => (
                             <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.id}</TableCell>
                                 <TableCell>{item.name}</TableCell>
@@ -74,15 +79,12 @@ export default function Clinistinction() {
                                     <div className="flex gap-2 justify-end">
                                         <Button size="sm" variant="outline" onClick={() => { setSelectedItem(item); setIsViewModalOpen(true) }} className="gap-1">
                                             <Eye className="w-3 h-3" />
-                                            
                                         </Button>
                                         <Button size="sm" variant="outline" className="gap-1">
                                             <Edit className="w-3 h-3" />
-                                            
                                         </Button>
                                         <Button size="sm" variant="destructive" onClick={() => { setSelectedItem(item); setIsDeleteDialogOpen(true) }} className="gap-1">
                                             <Trash2 className="w-3 h-3" />
-                                            
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -90,6 +92,74 @@ export default function Clinistinction() {
                         ))}
                     </TableBody>
                 </Table>
+                <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    itemsPerPage={pagination.itemsPerPage}
+                    totalItems={pagination.totalItems}
+                    startIndex={pagination.startIndex}
+                    endIndex={pagination.endIndex}
+                    onPageChange={pagination.goToPage}
+                    onItemsPerPageChange={pagination.setItemsPerPage}
+                />
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                {pagination.currentItems.map((item) => (
+                    <div key={item.id} className="bg-white rounded-lg border border-border shadow-sm p-4">
+                        <div className="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 className="font-semibold text-lg">{item.name}</h3>
+                                <p className="text-sm text-muted-foreground">ID: {item.id}</p>
+                            </div>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                {item.status}
+                            </span>
+                        </div>
+                        <div className="space-y-2 text-sm mb-4">
+                            <div>
+                                <span className="text-muted-foreground">Description:</span>
+                                <p className="font-medium">{item.description}</p>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Category:</span>
+                                <p className="font-medium">{item.category}</p>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Created:</span>
+                                <p className="font-medium">{item.createdDate}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedItem(item); setIsViewModalOpen(true) }} className="flex-1 gap-1">
+                                <Eye className="w-3 h-3" />
+                                View
+                            </Button>
+                            <Button size="sm" variant="outline" className="flex-1 gap-1">
+                                <Edit className="w-3 h-3" />
+                                Edit
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => { setSelectedItem(item); setIsDeleteDialogOpen(true) }} className="flex-1 gap-1">
+                                <Trash2 className="w-3 h-3" />
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+                <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+                    <Pagination
+                        currentPage={pagination.currentPage}
+                        totalPages={pagination.totalPages}
+                        itemsPerPage={pagination.itemsPerPage}
+                        totalItems={pagination.totalItems}
+                        startIndex={pagination.startIndex}
+                        endIndex={pagination.endIndex}
+                        onPageChange={pagination.goToPage}
+                        onItemsPerPageChange={pagination.setItemsPerPage}
+                    />
+                </div>
             </div>
 
             <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="Clinistinction Details">

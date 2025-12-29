@@ -6,6 +6,8 @@ import { Modal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/ui/Toast'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table'
+import { Pagination } from '@/components/ui/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 import { mockStudents } from '@/data/mockData'
 import type { Student } from '@/types'
 
@@ -23,6 +25,8 @@ export default function Students() {
         student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.id.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    const pagination = usePagination({ items: filteredStudents, initialItemsPerPage: 10 })
 
     const handleDelete = () => {
         if (!selectedStudent) return
@@ -50,7 +54,8 @@ export default function Students() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-lg border border-border shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -64,7 +69,7 @@ export default function Students() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredStudents.map((student) => (
+                        {pagination.currentItems.map((student) => (
                             <TableRow key={student.id}>
                                 <TableCell className="font-medium">{student.id}</TableCell>
                                 <TableCell>{student.fullName}</TableCell>
@@ -81,15 +86,12 @@ export default function Students() {
                                     <div className="flex gap-2 justify-end">
                                         <Button size="sm" variant="outline" onClick={() => { setSelectedStudent(student); setIsViewModalOpen(true) }} className="gap-1">
                                             <Eye className="w-3 h-3" />
-                                            
                                         </Button>
                                         <Button size="sm" variant="outline" onClick={() => { setSelectedStudent(student); setIsEditModalOpen(true) }} className="gap-1">
                                             <Edit className="w-3 h-3" />
-                                            
                                         </Button>
                                         <Button size="sm" variant="destructive" onClick={() => { setSelectedStudent(student); setIsDeleteDialogOpen(true) }} className="gap-1">
                                             <Trash2 className="w-3 h-3" />
-                                            
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -97,6 +99,74 @@ export default function Students() {
                         ))}
                     </TableBody>
                 </Table>
+                <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    itemsPerPage={pagination.itemsPerPage}
+                    totalItems={pagination.totalItems}
+                    startIndex={pagination.startIndex}
+                    endIndex={pagination.endIndex}
+                    onPageChange={pagination.goToPage}
+                    onItemsPerPageChange={pagination.setItemsPerPage}
+                />
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                {pagination.currentItems.map((student) => (
+                    <div key={student.id} className="bg-white rounded-lg border border-border shadow-sm p-4">
+                        <div className="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 className="font-semibold text-lg">{student.fullName}</h3>
+                                <p className="text-sm text-muted-foreground">ID: {student.id}</p>
+                            </div>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                {student.status}
+                            </span>
+                        </div>
+                        <div className="space-y-2 text-sm mb-4">
+                            <div>
+                                <span className="text-muted-foreground">Email:</span>
+                                <p className="font-medium">{student.email}</p>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Phone:</span>
+                                <p className="font-medium">{student.phone}</p>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Grade:</span>
+                                <p className="font-medium">{student.grade}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedStudent(student); setIsViewModalOpen(true) }} className="flex-1 gap-1">
+                                <Eye className="w-3 h-3" />
+                                View
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedStudent(student); setIsEditModalOpen(true) }} className="flex-1 gap-1">
+                                <Edit className="w-3 h-3" />
+                                Edit
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => { setSelectedStudent(student); setIsDeleteDialogOpen(true) }} className="flex-1 gap-1">
+                                <Trash2 className="w-3 h-3" />
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+                <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+                    <Pagination
+                        currentPage={pagination.currentPage}
+                        totalPages={pagination.totalPages}
+                        itemsPerPage={pagination.itemsPerPage}
+                        totalItems={pagination.totalItems}
+                        startIndex={pagination.startIndex}
+                        endIndex={pagination.endIndex}
+                        onPageChange={pagination.goToPage}
+                        onItemsPerPageChange={pagination.setItemsPerPage}
+                    />
+                </div>
             </div>
 
             <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="Student Details">
