@@ -11,24 +11,29 @@ import Clinistinction from './pages/Clinistinction'
 import CountryCode from './pages/CountryCode'
 import Schools from './pages/Schools'
 import NotFound from './pages/NotFound'
+import Login from './pages/Login'
+import Register from './pages/Register'
 
 function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
-        <MainLayout>
-          <Routes>
-            <Route path="/" element={<AppSettings />} />
-            <Route path="/roles" element={<Roles />} />
-            <Route path="/students" element={<Students />} />
-            <Route path="/teachers" element={<Teachers />} />
-            <Route path="/parents" element={<Parents />} />
-            <Route path="/clinistinction" element={<Clinistinction />} />
-            <Route path="/country-codes" element={<CountryCode />} />
-            <Route path="/schools" element={<Schools />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </MainLayout>
+        <Routes>
+          {/* Authentication Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Protected Routes */}
+          <Route path="/" element={<MainLayout><AppSettings /></MainLayout>} />
+          <Route path="/roles" element={<MainLayout><Roles /></MainLayout>} />
+          <Route path="/students" element={<MainLayout><Students /></MainLayout>} />
+          <Route path="/teachers" element={<MainLayout><Teachers /></MainLayout>} />
+          <Route path="/parents" element={<MainLayout><Parents /></MainLayout>} />
+          <Route path="/clinistinction" element={<MainLayout><Clinistinction /></MainLayout>} />
+          <Route path="/country-codes" element={<MainLayout><CountryCode /></MainLayout>} />
+          <Route path="/schools" element={<MainLayout><Schools /></MainLayout>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </ToastProvider>
     </BrowserRouter>
   )

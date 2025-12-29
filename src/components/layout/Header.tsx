@@ -33,7 +33,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
                             <User className="w-4 h-4 text-white" />
                         </div>
                         <div className="hidden md:block">
-                            <p className="text-sm font-medium">Admin User</p>
+
                         </div>
                     </div>
                 </div>
