@@ -1,0 +1,10 @@
+// Export all validation schemas
+export * from './authschema'
+export * from './roleSchema'
+export * from './studentSchema'
+export * from './teacherSchema'
+export * from './parentSchema'
+export * from './clinistinctionSchema'
+export * from './countryCodeSchema'
+export * from './schoolSchema'
+export * from './appSettingsSchema'

@@ -52,6 +52,8 @@ export interface CountryCode {
   id: string;
   countryName: string;
   dialCode: string;
+  flagImage: string;
+  digitCountLimit: number;
   status: 'Active' | 'Inactive';
 }
 

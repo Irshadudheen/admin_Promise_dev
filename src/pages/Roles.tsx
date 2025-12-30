@@ -161,7 +161,7 @@ export default function Roles() {
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden space-y-4">
+            <div className="md:hidden space-y-4   ">
                 {pagination.currentItems.map((role) => (
                     <div key={role.id} className="bg-white rounded-lg border border-border shadow-sm p-4">
                         <div className="flex justify-between items-start mb-3">
@@ -215,7 +215,7 @@ export default function Roles() {
                     </div>
                 }
             >
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                     <div>
                         <label className="block text-sm font-medium mb-2">Role Name</label>
                         <Input

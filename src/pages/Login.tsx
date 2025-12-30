@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/Input'
 import { Loader } from '@/components/ui/Loader'
+import { loginSchema } from '@/schema'
+import { z } from 'zod'
 
 export default function Login() {
     const navigate = useNavigate()
@@ -14,22 +16,22 @@ export default function Login() {
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
 
     const validateForm = () => {
-        const newErrors: { email?: string; password?: string } = {}
-
-        if (!formData.email) {
-            newErrors.email = 'Email is required'
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = 'Email is invalid'
+        try {
+            loginSchema.parse(formData)
+            setErrors({})
+            return true
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                const fieldErrors: { email?: string; password?: string } = {}
+                error.issues.forEach((issue) => {
+                    if (issue.path[0]) {
+                        fieldErrors[issue.path[0] as keyof typeof fieldErrors] = issue.message
+                    }
+                })
+                setErrors(fieldErrors)
+            }
+            return false
         }
-
-        if (!formData.password) {
-            newErrors.password = 'Password is required'
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters'
-        }
-
-        setErrors(newErrors)
-        return Object.keys(newErrors).length === 0
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -71,8 +73,8 @@ export default function Login() {
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Email Field */}
-                        <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium text-foreground">
+                        <div className="space-y-2 text-left">
+                            <label htmlFor="email" className=" text-sm font-medium text-foreground ">
                                 Email Address
                             </label>
                             <Input
@@ -91,7 +93,7 @@ export default function Login() {
                         </div>
 
                         {/* Password Field */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-left">
                             <label htmlFor="password" className="text-sm font-medium text-foreground">
                                 Password
                             </label>

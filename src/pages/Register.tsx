@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/Input'
 import { Loader } from '@/components/ui/Loader'
+import { registerSchema } from '@/schema'
+import { z } from 'zod'
 
 export default function Register() {
     const navigate = useNavigate()
@@ -22,34 +24,22 @@ export default function Register() {
     }>({})
 
     const validateForm = () => {
-        const newErrors: typeof errors = {}
-
-        if (!formData.name) {
-            newErrors.name = 'Name is required'
-        } else if (formData.name.length < 2) {
-            newErrors.name = 'Name must be at least 2 characters'
+        try {
+            registerSchema.parse(formData)
+            setErrors({})
+            return true
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                const fieldErrors: typeof errors = {}
+                error.issues.forEach((issue) => {
+                    if (issue.path[0]) {
+                        fieldErrors[issue.path[0] as keyof typeof fieldErrors] = issue.message
+                    }
+                })
+                setErrors(fieldErrors)
+            }
+            return false
         }
-
-        if (!formData.email) {
-            newErrors.email = 'Email is required'
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = 'Email is invalid'
-        }
-
-        if (!formData.password) {
-            newErrors.password = 'Password is required'
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters'
-        }
-
-        if (!formData.confirmPassword) {
-            newErrors.confirmPassword = 'Please confirm your password'
-        } else if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match'
-        }
-
-        setErrors(newErrors)
-        return Object.keys(newErrors).length === 0
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -134,7 +124,7 @@ export default function Register() {
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Name Field */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-left">
                             <label htmlFor="name" className="text-sm font-medium text-foreground">
                                 Full Name
                             </label>
@@ -154,8 +144,8 @@ export default function Register() {
                         </div>
 
                         {/* Email Field */}
-                        <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium text-foreground">
+                        <div className="space-y-2 text-left">
+                            <label htmlFor="email" className="text-sm font-medium text-foreground ">
                                 Email Address
                             </label>
                             <Input
@@ -174,7 +164,7 @@ export default function Register() {
                         </div>
 
                         {/* Password Field */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-left">
                             <label htmlFor="password" className="text-sm font-medium text-foreground">
                                 Password
                             </label>
@@ -194,7 +184,7 @@ export default function Register() {
                         </div>
 
                         {/* Confirm Password Field */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-left">
                             <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
                                 Confirm Password
                             </label>

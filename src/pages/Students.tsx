@@ -52,6 +52,7 @@ export default function Students() {
                         className="pl-9"
                     />
                 </div>
+                
             </div>
 
             {/* Desktop Table View */}

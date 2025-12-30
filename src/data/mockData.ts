@@ -55,16 +55,16 @@ export const mockClinistinction: Clinistinction[] = [
 
 // Mock Country Codes Data
 export const mockCountryCodes: CountryCode[] = [
-    { id: 'CC001', countryName: 'United States', dialCode: '+1', status: 'Active' },
-    { id: 'CC002', countryName: 'United Kingdom', dialCode: '+44', status: 'Active' },
-    { id: 'CC003', countryName: 'India', dialCode: '+91', status: 'Active' },
-    { id: 'CC004', countryName: 'Canada', dialCode: '+1', status: 'Active' },
-    { id: 'CC005', countryName: 'Australia', dialCode: '+61', status: 'Active' },
-    { id: 'CC006', countryName: 'Germany', dialCode: '+49', status: 'Active' },
-    { id: 'CC007', countryName: 'France', dialCode: '+33', status: 'Active' },
-    { id: 'CC008', countryName: 'Japan', dialCode: '+81', status: 'Active' },
-    { id: 'CC009', countryName: 'China', dialCode: '+86', status: 'Active' },
-    { id: 'CC010', countryName: 'Brazil', dialCode: '+55', status: 'Active' },
+    { id: 'CC001', countryName: 'United States', dialCode: '+1', flagImage: '🇺🇸', digitCountLimit: 10, status: 'Active' },
+    { id: 'CC002', countryName: 'United Kingdom', dialCode: '+44', flagImage: '🇬🇧', digitCountLimit: 10, status: 'Active' },
+    { id: 'CC003', countryName: 'India', dialCode: '+91', flagImage: '🇮🇳', digitCountLimit: 10, status: 'Active' },
+    { id: 'CC004', countryName: 'Canada', dialCode: '+1', flagImage: '🇨🇦', digitCountLimit: 10, status: 'Active' },
+    { id: 'CC005', countryName: 'Australia', dialCode: '+61', flagImage: '🇦🇺', digitCountLimit: 9, status: 'Active' },
+    { id: 'CC006', countryName: 'Germany', dialCode: '+49', flagImage: '🇩🇪', digitCountLimit: 11, status: 'Active' },
+    { id: 'CC007', countryName: 'France', dialCode: '+33', flagImage: '🇫🇷', digitCountLimit: 9, status: 'Active' },
+    { id: 'CC008', countryName: 'Japan', dialCode: '+81', flagImage: '🇯🇵', digitCountLimit: 10, status: 'Active' },
+    { id: 'CC009', countryName: 'China', dialCode: '+86', flagImage: '🇨🇳', digitCountLimit: 11, status: 'Active' },
+    { id: 'CC010', countryName: 'Brazil', dialCode: '+55', flagImage: '🇧🇷', digitCountLimit: 11, status: 'Active' },
 ];
 
 // Mock Schools Data
