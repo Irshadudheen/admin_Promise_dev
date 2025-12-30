@@ -40,8 +40,11 @@ const useAuthStore = create<AuthStore>()(
           }
 
           toast.success('Logged in successfully.');
-          const { user } = data.data;
-          const { accessToken, refreshToken } = data.data;
+          console.log(data.data, 'data from store');
+
+          // API response structure: { success, message, data: {...user}, accessToken, refreshToken }
+          const user = data.data;
+          const { accessToken, refreshToken } = data;
 
           console.log('accessToken:', accessToken);
           console.log('User detail:', user);
@@ -50,7 +53,7 @@ const useAuthStore = create<AuthStore>()(
             user,
             accessToken,
             refreshToken,
-            role: user.userType,
+            role: 'admin',
             isAuthenticated: true,
             isLoading: false,
             error: null,
@@ -65,7 +68,7 @@ const useAuthStore = create<AuthStore>()(
 
         register: async (name, email, password, roleId) => {
           set({ isLoading: true, signUpError: null });
-          console.log(roleId,'roleId from store');
+          console.log(roleId, 'roleId from store');
           const { data, error } = await AuthService.registerService({
             email,
             name,
@@ -94,8 +97,9 @@ const useAuthStore = create<AuthStore>()(
             return false;
           }
 
-          const { user } = data.data;
-          const { accessToken, refreshToken } = data.data;
+          // API response structure: { success, message, data: {...user}, accessToken, refreshToken }
+          const user = data.data;
+          const { accessToken, refreshToken } = data;
 
           console.log('accessToken:', accessToken);
           console.log('User detail:', user);

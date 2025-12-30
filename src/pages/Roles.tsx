@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Edit, Trash2, Search } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Edit, Trash2, Search, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
@@ -8,69 +8,105 @@ import { useToast } from '@/components/ui/Toast'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table'
 import { Pagination } from '@/components/ui/Pagination'
 import { usePagination } from '@/hooks/usePagination'
-import { mockRoles } from '@/data/mockData'
-import type { Role } from '@/types'
+import { Loader } from '@/components/ui/Loader'
+import useRoleStore from '@/store/roleStore'
+import type { Role } from '@/types/role'
 
 export default function Roles() {
-    const [roles, setRoles] = useState<Role[]>(mockRoles)
+    const { roles, isLoading, fetchRoles, createRole, updateRole, deleteRole, restoreRole } = useRoleStore()
     const [searchTerm, setSearchTerm] = useState('')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [selectedRole, setSelectedRole] = useState<Role | null>(null)
-    const [formData, setFormData] = useState({ roleName: '', description: '', status: 'Active' as 'Active' | 'Inactive' })
+    const [formData, setFormData] = useState({ name: '', description: '' })
+    const [showDeleted, setShowDeleted] = useState(false)
     const { showToast } = useToast()
+
+    // Fetch roles on component mount
+    useEffect(() => {
+        fetchRoles(showDeleted)
+    }, [showDeleted, fetchRoles])
 
     const filteredRoles = roles.filter(role =>
         role.roleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        role.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (role.description?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     )
 
     const pagination = usePagination({ items: filteredRoles, initialItemsPerPage: 10 })
 
-    const handleCreate = () => {
-        const newRole: Role = {
-            id: `${roles.length + 1}`,
-            roleName: formData.roleName,
-            description: formData.description,
-            createdDate: new Date().toISOString().split('T')[0],
-            status: formData.status
+    const handleCreate = async () => {
+        if (!formData.name.trim()) {
+            showToast('error', 'Role name is required')
+            return
         }
-        setRoles([...roles, newRole])
-        setIsCreateModalOpen(false)
-        setFormData({ roleName: '', description: '', status: 'Active' })
-        showToast('success', 'Role created successfully!')
+
+        const success = await createRole({
+            roleName: formData.name,
+            description: formData.description,
+        })
+
+        if (success) {
+            setIsCreateModalOpen(false)
+            setFormData({ name: '', description: '' })
+        }
     }
 
-    const handleEdit = () => {
+    const handleEdit = async () => {
         if (!selectedRole) return
-        setRoles(roles.map(role =>
-            role.id === selectedRole.id
-                ? { ...role, roleName: formData.roleName, description: formData.description, status: formData.status }
-                : role
-        ))
-        setIsEditModalOpen(false)
-        setSelectedRole(null)
-        setFormData({ roleName: '', description: '', status: 'Active' })
-        showToast('success', 'Role updated successfully!')
+        if (!formData.name.trim()) {
+            showToast('error', 'Role name is required')
+            return
+        }
+
+        const success = await updateRole(selectedRole.roleId, {
+            roleName: formData.name,
+            description: formData.description,
+        })
+
+        if (success) {
+            setIsEditModalOpen(false)
+            setSelectedRole(null)
+            setFormData({ name: '', description: '' })
+        }
     }
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!selectedRole) return
-        setRoles(roles.filter(role => role.id !== selectedRole.id))
-        setSelectedRole(null)
-        showToast('success', 'Role deleted successfully!')
+
+        const success = await deleteRole(selectedRole.roleId)
+
+        if (success) {
+            setIsDeleteDialogOpen(false)
+            setSelectedRole(null)
+        }
+    }
+
+    const handleRestore = async (role: Role) => {
+        await restoreRole(role.roleId)
     }
 
     const openEditModal = (role: Role) => {
         setSelectedRole(role)
-        setFormData({ roleName: role.roleName, description: role.description, status: role.status })
+        setFormData({ name: role.roleName, description: role.description || '' })
         setIsEditModalOpen(true)
     }
 
     const openDeleteDialog = (role: Role) => {
         setSelectedRole(role)
         setIsDeleteDialogOpen(true)
+    }
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString()
+    }
+
+    if (isLoading && roles.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader />
+            </div>
+        )
     }
 
     return (
@@ -93,10 +129,19 @@ export default function Roles() {
                             className="pl-9"
                         />
                     </div>
-                    <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-                        <Plus className="w-4 h-4" />
-                        Add Role
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowDeleted(!showDeleted)}
+                            className="gap-2"
+                        >
+                            {showDeleted ? 'Hide Deleted' : 'Show Deleted'}
+                        </Button>
+                        <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+                            <Plus className="w-4 h-4" />
+                            Add Role
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -105,6 +150,7 @@ export default function Roles() {
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>Image</TableHead>
                             <TableHead>Role Name</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Created Date</TableHead>
@@ -114,34 +160,67 @@ export default function Roles() {
                     </TableHeader>
                     <TableBody>
                         {pagination.currentItems.map((role) => (
-                            <TableRow key={role.id}>
-                                <TableCell className="font-medium">{role.roleName}</TableCell>
-                                <TableCell>{role.description}</TableCell>
-                                <TableCell>{role.createdDate}</TableCell>
+                            <TableRow key={role.roleId}>
                                 <TableCell>
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${role.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                    {role.image ? (
+                                        <img
+                                            src={role.image}
+                                            alt={role.roleName}
+                                            className="w-10 h-10 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <span className="text-gray-500 text-xs font-medium">
+                                                {role.roleName.charAt(0).toUpperCase()}
+                                            </span>
+                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="font-medium">{role.roleName}</TableCell>
+                                <TableCell>{role.description || '-'}</TableCell>
+                                <TableCell>{formatDate(role.createdAt)}</TableCell>
+                                <TableCell>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${role.deletedAt
+                                        ? 'bg-red-100 text-red-800'
+                                        : !role.deletedAt
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-800'
                                         }`}>
-                                        {role.status}
+                                        {role.deletedAt ? 'Deleted' : !role.deletedAt ? 'Active' : 'Inactive'}
                                     </span>
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-2 justify-end">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => openEditModal(role)}
-                                            className="gap-1"
-                                        >
-                                            <Edit className="w-3 h-3" />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={() => openDeleteDialog(role)}
-                                            className="gap-1"
-                                        >
-                                            <Trash2 className="w-3 h-3" />
-                                        </Button>
+                                        {role.deletedAt ? (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleRestore(role)}
+                                                className="gap-1"
+                                            >
+                                                <RotateCcw className="w-3 h-3" />
+                                                Restore
+                                            </Button>
+                                        ) : (
+                                            <>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => openEditModal(role)}
+                                                    className="gap-1"
+                                                >
+                                                    <Edit className="w-3 h-3" />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="destructive"
+                                                    onClick={() => openDeleteDialog(role)}
+                                                    className="gap-1"
+                                                >
+                                                    <Trash2 className="w-3 h-3" />
+                                                </Button>
+                                            </>
+                                        )}
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -161,31 +240,47 @@ export default function Roles() {
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden space-y-4   ">
+            <div className="md:hidden space-y-4">
                 {pagination.currentItems.map((role) => (
-                    <div key={role.id} className="bg-white rounded-lg border border-border shadow-sm p-4">
+                    <div key={role.roleId} className="bg-white rounded-lg border border-border shadow-sm p-4">
                         <div className="flex justify-between items-start mb-3">
                             <div>
                                 <h3 className="font-semibold text-lg">{role.roleName}</h3>
-                                <p className="text-sm text-muted-foreground">{role.description}</p>
+                                <p className="text-sm text-muted-foreground">{role.description || '-'}</p>
                             </div>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${role.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${role.deletedAt
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-green-100 text-green-800'
                                 }`}>
-                                {role.status}
+                                {role.deletedAt ? 'Deleted' : 'Active'}
                             </span>
                         </div>
                         <div className="text-sm text-muted-foreground mb-4">
-                            Created: {role.createdDate}
+                            Created: {formatDate(role.createdAt)}
                         </div>
                         <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => openEditModal(role)} className="flex-1 gap-1">
-                                <Edit className="w-3 h-3" />
-                                Edit
-                            </Button>
-                            <Button size="sm" variant="destructive" onClick={() => openDeleteDialog(role)} className="flex-1 gap-1">
-                                <Trash2 className="w-3 h-3" />
-                                Delete
-                            </Button>
+                            {role.deletedAt ? (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleRestore(role)}
+                                    className="flex-1 gap-1"
+                                >
+                                    <RotateCcw className="w-3 h-3" />
+                                    Restore
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button size="sm" variant="outline" onClick={() => openEditModal(role)} className="flex-1 gap-1">
+                                        <Edit className="w-3 h-3" />
+                                        Edit
+                                    </Button>
+                                    <Button size="sm" variant="destructive" onClick={() => openDeleteDialog(role)} className="flex-1 gap-1">
+                                        <Trash2 className="w-3 h-3" />
+                                        Delete
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -211,16 +306,18 @@ export default function Roles() {
                 footer={
                     <div className="flex gap-3 justify-end">
                         <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreate}>Create Role</Button>
+                        <Button onClick={handleCreate} disabled={isLoading}>
+                            {isLoading ? 'Creating...' : 'Create Role'}
+                        </Button>
                     </div>
                 }
             >
                 <div className="space-y-4 text-left">
                     <div>
-                        <label className="block text-sm font-medium mb-2">Role Name</label>
+                        <label className="block text-sm font-medium mb-2">Role Name *</label>
                         <Input
-                            value={formData.roleName}
-                            onChange={(e) => setFormData({ ...formData, roleName: e.target.value })}
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             placeholder="Enter role name"
                         />
                     </div>
@@ -231,17 +328,6 @@ export default function Roles() {
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             placeholder="Enter role description"
                         />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Status</label>
-                        <select
-                            value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' })}
-                            className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                        >
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
                     </div>
                 </div>
             </Modal>
@@ -254,16 +340,18 @@ export default function Roles() {
                 footer={
                     <div className="flex gap-3 justify-end">
                         <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleEdit}>Save Changes</Button>
+                        <Button onClick={handleEdit} disabled={isLoading}>
+                            {isLoading ? 'Saving...' : 'Save Changes'}
+                        </Button>
                     </div>
                 }
             >
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                     <div>
-                        <label className="block text-sm font-medium mb-2">Role Name</label>
+                        <label className="block text-sm font-medium mb-2">Role Name *</label>
                         <Input
-                            value={formData.roleName}
-                            onChange={(e) => setFormData({ ...formData, roleName: e.target.value })}
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             placeholder="Enter role name"
                         />
                     </div>
@@ -275,17 +363,6 @@ export default function Roles() {
                             placeholder="Enter role description"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Status</label>
-                        <select
-                            value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' })}
-                            className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                        >
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
                 </div>
             </Modal>
 
@@ -295,7 +372,7 @@ export default function Roles() {
                 onClose={() => setIsDeleteDialogOpen(false)}
                 onConfirm={handleDelete}
                 title="Delete Role"
-                message={`Are you sure you want to delete the role "${selectedRole?.roleName}"? This action cannot be undone.`}
+                message={`Are you sure you want to delete the role "${selectedRole?.roleName}"? This action will soft delete the role.`}
             />
         </div>
     )

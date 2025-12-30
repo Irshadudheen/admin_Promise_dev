@@ -37,11 +37,11 @@ export interface OtpVerificationBody {
 }
 
 export interface AuthResponse {
-    data: {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-    };
+    success: boolean;
+    message: string;
+    data: User;
+    accessToken: string;
+    refreshToken: string;
 }
 
 export interface ServiceResponse<T> {
