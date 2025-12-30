@@ -5,6 +5,8 @@ import { ToastProvider } from './components/ui/Toast'
 import { Toaster } from 'sonner'
 import AppSettings from './pages/AppSettings'
 import Roles from './pages/Roles'
+import Grades from './pages/Grades'
+import Classes from './pages/Classes'
 import Students from './pages/Students'
 import Teachers from './pages/Teachers'
 import Parents from './pages/Parents'
@@ -28,6 +30,8 @@ function App() {
           {/* Protected Routes */}
           <Route path="/" element={<MainLayout><AppSettings /></MainLayout>} />
           <Route path="/roles" element={<MainLayout><Roles /></MainLayout>} />
+          <Route path="/grades" element={<MainLayout><Grades /></MainLayout>} />
+          <Route path="/classes" element={<MainLayout><Classes /></MainLayout>} />
           <Route path="/students" element={<MainLayout><Students /></MainLayout>} />
           <Route path="/teachers" element={<MainLayout><Teachers /></MainLayout>} />
           <Route path="/parents" element={<MainLayout><Parents /></MainLayout>} />

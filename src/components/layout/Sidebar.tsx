@@ -8,7 +8,8 @@ import {
     Globe,
     School,
     Settings,
-    X
+    X,
+    BookOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +21,8 @@ interface SidebarProps {
 const menuItems = [
     { name: 'App Settings', path: '/', icon: Settings },
     { name: 'Roles', path: '/roles', icon: Shield },
+    { name: 'Divisions', path: '/grades', icon: BookOpen },
+    { name: 'Classes', path: '/classes', icon: School },
     { name: 'Students', path: '/students', icon: GraduationCap },
     { name: 'Teachers', path: '/teachers', icon: Users },
     { name: 'Parents', path: '/parents', icon: UserCircle },
