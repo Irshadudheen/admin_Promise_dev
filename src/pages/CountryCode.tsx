@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Edit, Trash2, Search, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/Input'
@@ -8,44 +8,45 @@ import { useToast } from '@/components/ui/Toast'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table'
 import { Pagination } from '@/components/ui/Pagination'
 import { usePagination } from '@/hooks/usePagination'
-import { mockCountryCodes } from '@/data/mockData'
-import type { CountryCode } from '@/types'
-import { countryCodeSchema } from '@/schema'
-import { z } from 'zod'
+import { Loader } from '@/components/ui/Loader'
+import useCountryCodeStore from '@/store/countryCodeStore'
+import type { CountryCode } from '@/types/school'
 
 interface CountryCodeFormData {
-    countryName: string
-    dialCode: string
+    code: string
+    digitCount: string
     flagImage: string
-    digitCountLimit: string
-    status: 'Active' | 'Inactive'
 }
 
-export default function CountryCode() {
-    const [countryCodes, setCountryCodes] = useState<CountryCode[]>(mockCountryCodes)
+export default function CountryCodePage() {
+    const {
+        countryCodes,
+        isLoading,
+        fetchCountryCodes,
+        createCountryCode,
+        updateCountryCode,
+        deleteCountryCode
+    } = useCountryCodeStore()
+
     const [searchTerm, setSearchTerm] = useState('')
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [selectedCode, setSelectedCode] = useState<CountryCode | null>(null)
     const [formData, setFormData] = useState<CountryCodeFormData>({
-        countryName: '',
-        dialCode: '',
-        flagImage: '',
-        digitCountLimit: '',
-        status: 'Active'
+        code: '',
+        digitCount: '',
+        flagImage: ''
     })
-    const [errors, setErrors] = useState<{
-        countryName?: string
-        dialCode?: string
-        flagImage?: string
-        digitCountLimit?: string
-        status?: string
-    }>({})
     const { showToast } = useToast()
 
+    // Fetch country codes on component mount
+    useEffect(() => {
+        fetchCountryCodes()
+    }, [fetchCountryCodes])
+
     const filteredCodes = countryCodes.filter(code =>
-        code.countryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        code.dialCode.includes(searchTerm)
+        code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        code.flagImage.includes(searchTerm)
     )
 
     const pagination = usePagination({ items: filteredCodes, initialItemsPerPage: 10 })
@@ -53,11 +54,9 @@ export default function CountryCode() {
     const handleOpenAddModal = () => {
         setSelectedCode(null)
         setFormData({
-            countryName: '',
-            dialCode: '',
-            flagImage: '',
-            digitCountLimit: '',
-            status: 'Active'
+            code: '',
+            digitCount: '',
+            flagImage: ''
         })
         setIsModalOpen(true)
     }
@@ -65,11 +64,9 @@ export default function CountryCode() {
     const handleOpenEditModal = (code: CountryCode) => {
         setSelectedCode(code)
         setFormData({
-            countryName: code.countryName,
-            dialCode: code.dialCode,
-            flagImage: code.flagImage,
-            digitCountLimit: code.digitCountLimit.toString(),
-            status: code.status
+            code: code.code,
+            digitCount: code.digitCount.toString(),
+            flagImage: code.flagImage
         })
         setIsModalOpen(true)
     }
@@ -78,69 +75,74 @@ export default function CountryCode() {
         setIsModalOpen(false)
         setSelectedCode(null)
         setFormData({
-            countryName: '',
-            dialCode: '',
-            flagImage: '',
-            digitCountLimit: '',
-            status: 'Active'
+            code: '',
+            digitCount: '',
+            flagImage: ''
         })
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // Zod Validation
-        try {
-            const validatedData = countryCodeSchema.parse({
-                ...formData,
-                digitCountLimit: parseInt(formData.digitCountLimit) || 0
-            })
-            setErrors({})
+        // Validation
+        if (!formData.code.trim()) {
+            showToast('error', 'Country code is required')
+            return
+        }
+        if (!formData.digitCount.trim()) {
+            showToast('error', 'Digit count is required')
+            return
+        }
+        if (!formData.flagImage.trim()) {
+            showToast('error', 'Flag emoji is required')
+            return
+        }
 
-            const digitCountLimit = validatedData.digitCountLimit
+        const digitCount = parseInt(formData.digitCount)
+        if (isNaN(digitCount) || digitCount < 1) {
+            showToast('error', 'Digit count must be a positive number')
+            return
+        }
 
-            if (selectedCode) {
-                // Edit existing
-                setCountryCodes(countryCodes.map(code =>
-                    code.id === selectedCode.id
-                        ? { ...code, ...formData, digitCountLimit }
-                        : code
-                ))
-                showToast('success', 'Country code updated successfully!')
-            } else {
-                // Add new
-                const newCode: CountryCode = {
-                    id: `CC${String(countryCodes.length + 1).padStart(3, '0')}`,
-                    countryName: formData.countryName,
-                    dialCode: formData.dialCode,
-                    flagImage: formData.flagImage,
-                    digitCountLimit,
-                    status: formData.status
-                }
-                setCountryCodes([...countryCodes, newCode])
-                showToast('success', 'Country code added successfully!')
-            }
+        const data = {
+            code: formData.code,
+            digitCount,
+            flagImage: formData.flagImage
+        }
 
+        let success = false
+        if (selectedCode) {
+            success = await updateCountryCode(selectedCode.id, data)
+        } else {
+            success = await createCountryCode(data)
+        }
+
+        if (success) {
             handleCloseModal()
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                const fieldErrors: typeof errors = {}
-                error.issues.forEach((issue) => {
-                    if (issue.path[0]) {
-                        fieldErrors[issue.path[0] as keyof typeof fieldErrors] = issue.message
-                    }
-                })
-                setErrors(fieldErrors)
-                showToast('error', 'Please fix the validation errors')
-            }
         }
     }
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!selectedCode) return
-        setCountryCodes(countryCodes.filter(c => c.id !== selectedCode.id))
-        setSelectedCode(null)
-        showToast('success', 'Country code deleted successfully!')
+
+        const success = await deleteCountryCode(selectedCode.id)
+
+        if (success) {
+            setIsDeleteDialogOpen(false)
+            setSelectedCode(null)
+        }
+    }
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString()
+    }
+
+    if (isLoading && countryCodes.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader />
+            </div>
+        )
     }
 
     return (
@@ -154,7 +156,12 @@ export default function CountryCode() {
                 <div className="flex flex-col sm:flex-row gap-3 justify-between">
                     <div className="relative max-w-md flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input placeholder="Search country codes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
+                        <Input
+                            placeholder="Search country codes..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9"
+                        />
                     </div>
                     <Button onClick={handleOpenAddModal} className="gap-2">
                         <Plus className="w-4 h-4" />
@@ -169,35 +176,52 @@ export default function CountryCode() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Flag</TableHead>
-                            <TableHead>Country Name</TableHead>
-                            <TableHead>Dial Code</TableHead>
+                            <TableHead>Country Code</TableHead>
                             <TableHead>Digit Limit</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Created Date</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {pagination.currentItems.map((code) => (
                             <TableRow key={code.id}>
-                                <TableCell className="text-2xl">{code.flagImage}</TableCell>
-                                <TableCell className="font-medium">{code.countryName}</TableCell>
-                                <TableCell className="font-mono">{code.dialCode}</TableCell>
-                                <TableCell>{code.digitCountLimit} digits</TableCell>
                                 <TableCell>
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${code.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                        }`}>
-                                        {code.status}
-                                    </span>
+                                    {code.flagImage ? (
+                                        <img
+                                            src={code.flagImage}
+                                            alt="Flag"
+                                            className="w-8 h-6 object-cover rounded"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="24"><rect width="32" height="24" fill="%23ddd"/></svg>'
+                                            }}
+                                        />
+                                    ) : (
+                                        <span className="text-gray-400">No flag</span>
+                                    )}
                                 </TableCell>
+                                <TableCell className="font-medium font-mono">{code.code}</TableCell>
+                                <TableCell>{code.digitCount} digits</TableCell>
+                                <TableCell>{formatDate(code.createdAt)}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-2 justify-end">
-                                        <Button size="sm" variant="outline" onClick={() => handleOpenEditModal(code)} className="gap-1">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleOpenEditModal(code)}
+                                            className="gap-1"
+                                        >
                                             <Edit className="w-3 h-3" />
-                                            Edit
                                         </Button>
-                                        <Button size="sm" variant="destructive" onClick={() => { setSelectedCode(code); setIsDeleteDialogOpen(true) }} className="gap-1">
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() => {
+                                                setSelectedCode(code);
+                                                setIsDeleteDialogOpen(true)
+                                            }}
+                                            className="gap-1"
+                                        >
                                             <Trash2 className="w-3 h-3" />
-                                            Delete
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -223,24 +247,48 @@ export default function CountryCode() {
                     <div key={code.id} className="bg-white rounded-lg border border-border shadow-sm p-4">
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center gap-3">
-                                <span className="text-3xl">{code.flagImage}</span>
+                                {code.flagImage ? (
+                                    <img
+                                        src={code.flagImage}
+                                        alt="Flag"
+                                        className="w-12 h-9 object-cover rounded"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="36"><rect width="48" height="36" fill="%23ddd"/></svg>'
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="w-12 h-9 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                                        No flag
+                                    </div>
+                                )}
                                 <div>
-                                    <h3 className="font-semibold text-lg">{code.countryName}</h3>
-                                    <p className="text-sm text-muted-foreground font-mono">{code.dialCode}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">{code.digitCountLimit} digits</p>
+                                    <h3 className="font-semibold text-lg font-mono">{code.code}</h3>
+                                    <p className="text-sm text-muted-foreground">{code.digitCount} digits</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Created: {formatDate(code.createdAt)}
+                                    </p>
                                 </div>
                             </div>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${code.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                {code.status}
-                            </span>
                         </div>
                         <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleOpenEditModal(code)} className="flex-1 gap-1">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenEditModal(code)}
+                                className="flex-1 gap-1"
+                            >
                                 <Edit className="w-3 h-3" />
                                 Edit
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => { setSelectedCode(code); setIsDeleteDialogOpen(true) }} className="flex-1 gap-1">
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                    setSelectedCode(code);
+                                    setIsDeleteDialogOpen(true)
+                                }}
+                                className="flex-1 gap-1"
+                            >
                                 <Trash2 className="w-3 h-3" />
                                 Delete
                             </Button>
@@ -266,65 +314,44 @@ export default function CountryCode() {
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 title={selectedCode ? 'Edit Country Code' : 'Add Country Code'}
-                size="md"
+                footer={
+                    <div className="flex gap-3 justify-end">
+                        <Button variant="outline" onClick={handleCloseModal}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSubmit} disabled={isLoading}>
+                            {isLoading ? 'Saving...' : selectedCode ? 'Update' : 'Add'}
+                        </Button>
+                    </div>
+                }
             >
                 <form onSubmit={handleSubmit} className="space-y-4 text-left">
                     <div>
                         <label className="block text-sm font-medium text-foreground mb-1">
-                            Country Name <span className="text-red-500">*</span>
+                            Country Code <span className="text-red-500">*</span>
                         </label>
                         <Input
-                            placeholder="e.g., United States"
-                            value={formData.countryName}
-                            onChange={(e) => {
-                                setFormData({ ...formData, countryName: e.target.value })
-                                if (errors.countryName) setErrors({ ...errors, countryName: undefined })
-                            }}
-                            className={errors.countryName ? 'border-destructive' : ''}
+                            placeholder="e.g., +1, +91"
+                            value={formData.code}
+                            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                         />
-                        {errors.countryName && (
-                            <p className="text-sm text-destructive mt-1">{errors.countryName}</p>
-                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Include the + symbol (e.g., +1, +91, +44)
+                        </p>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-foreground mb-1">
-                            Dial Code <span className="text-red-500">*</span>
+                            Flag Image URL <span className="text-red-500">*</span>
                         </label>
                         <Input
-                            placeholder="e.g., +1"
-                            value={formData.dialCode}
-                            onChange={(e) => {
-                                setFormData({ ...formData, dialCode: e.target.value })
-                                if (errors.dialCode) setErrors({ ...errors, dialCode: undefined })
-                            }}
-                            className={errors.dialCode ? 'border-destructive' : ''}
-                        />
-                        {errors.dialCode && (
-                            <p className="text-sm text-destructive mt-1">{errors.dialCode}</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">
-                            Flag Emoji <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            placeholder="e.g., 🇺🇸"
+                            placeholder="e.g., https://flagcdn.com/w320/us.png"
                             value={formData.flagImage}
-                            onChange={(e) => {
-                                setFormData({ ...formData, flagImage: e.target.value })
-                                if (errors.flagImage) setErrors({ ...errors, flagImage: undefined })
-                            }}
-                            className={`text-2xl ${errors.flagImage ? 'border-destructive' : ''}`}
+                            onChange={(e) => setFormData({ ...formData, flagImage: e.target.value })}
                         />
-                        {errors.flagImage ? (
-                            <p className="text-sm text-destructive mt-1">{errors.flagImage}</p>
-                        ) : (
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Enter a flag emoji (e.g., 🇺🇸 🇬🇧 🇮🇳)
-                            </p>
-                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Enter a valid URL to a flag image (e.g., from flagcdn.com or similar)
+                        </p>
                     </div>
 
                     <div>
@@ -334,45 +361,13 @@ export default function CountryCode() {
                         <Input
                             type="number"
                             placeholder="e.g., 10"
-                            value={formData.digitCountLimit}
-                            onChange={(e) => {
-                                setFormData({ ...formData, digitCountLimit: e.target.value })
-                                if (errors.digitCountLimit) setErrors({ ...errors, digitCountLimit: undefined })
-                            }}
+                            value={formData.digitCount}
+                            onChange={(e) => setFormData({ ...formData, digitCount: e.target.value })}
                             min="1"
-                            className={errors.digitCountLimit ? 'border-destructive' : ''}
                         />
-                        {errors.digitCountLimit ? (
-                            <p className="text-sm text-destructive mt-1">{errors.digitCountLimit}</p>
-                        ) : (
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Maximum number of digits for phone numbers
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">
-                            Status <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' })}
-                            className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                            required
-                        >
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
-
-                    <div className="flex gap-3 pt-4">
-                        <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1">
-                            Cancel
-                        </Button>
-                        <Button type="submit" className="flex-1">
-                            {selectedCode ? 'Update' : 'Add'} Country Code
-                        </Button>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Maximum number of digits for phone numbers
+                        </p>
                     </div>
                 </form>
             </Modal>
@@ -382,7 +377,7 @@ export default function CountryCode() {
                 onClose={() => setIsDeleteDialogOpen(false)}
                 onConfirm={handleDelete}
                 title="Delete Country Code"
-                message={`Are you sure you want to delete the country code for "${selectedCode?.countryName}"?`}
+                message={`Are you sure you want to delete the country code "${selectedCode?.code}"?`}
             />
         </div>
     )
