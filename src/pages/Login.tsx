@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/Input'
 import { Loader } from '@/components/ui/Loader'
 import { loginSchema } from '@/schema'
 import { z } from 'zod'
+import useAuthStore from '@/store/authStore'
 
 export default function Login() {
     const navigate = useNavigate()
-    const [isLoading, setIsLoading] = useState(false)
+    const { login, isLoading } = useAuthStore()
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -41,14 +42,18 @@ export default function Login() {
             return
         }
 
-        setIsLoading(true)
+        try {
+            // Call the login function from Zustand store
+            const success = await login(formData.email, formData.password)
 
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false)
-            // Navigate to dashboard after successful login
-            navigate('/')
-        }, 1500)
+            if (success) {
+                // Navigate to dashboard after successful login
+                navigate('/')
+            }
+        } catch (error) {
+            // Error is already handled by the store and displayed via toast
+            console.error('Login failed:', error)
+        }
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,70 +1,44 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/Input'
 import { Loader } from '@/components/ui/Loader'
 import { registerSchema } from '@/schema'
 import { z } from 'zod'
+import { zodResolver } from "@hookform/resolvers/zod"
+import useAuthStore from '@/store/authStore'
+import { env } from '@/config/env'
+
+type RegisterFormData = z.infer<typeof registerSchema>
 
 export default function Register() {
     const navigate = useNavigate()
-    const [isLoading, setIsLoading] = useState(false)
+    const { register: registerUser, isLoading } = useAuthStore()
     const [isPending, setIsPending] = useState(false)
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<RegisterFormData>({
+        resolver: zodResolver(registerSchema),
     })
-    const [errors, setErrors] = useState<{
-        name?: string
-        email?: string
-        password?: string
-        confirmPassword?: string
-    }>({})
 
-    const validateForm = () => {
+    const onSubmit = async (data: RegisterFormData) => {
         try {
-            registerSchema.parse(formData)
-            setErrors({})
-            return true
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                const fieldErrors: typeof errors = {}
-                error.issues.forEach((issue) => {
-                    if (issue.path[0]) {
-                        fieldErrors[issue.path[0] as keyof typeof fieldErrors] = issue.message
-                    }
-                })
-                setErrors(fieldErrors)
+            const success = await registerUser(
+                data.name,
+                data.email,
+                data.password,
+                env.ADMIN_ROLE_ID
+            )
+
+            if (success) {
+                setIsPending(true)
             }
-            return false
-        }
-    }
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-
-        if (!validateForm()) {
-            return
-        }
-
-        setIsLoading(true)
-
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false)
-            setIsPending(true)
-            // Show pending approval message
-        }, 1500)
-    }
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
-        // Clear error when user starts typing
-        if (errors[name as keyof typeof errors]) {
-            setErrors(prev => ({ ...prev, [name]: undefined }))
+        } catch (error) {
+            console.error('Registration failed:', error)
         }
     }
 
@@ -122,7 +96,7 @@ export default function Register() {
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         {/* Name Field */}
                         <div className="space-y-2 text-left">
                             <label htmlFor="name" className="text-sm font-medium text-foreground">
@@ -130,16 +104,14 @@ export default function Register() {
                             </label>
                             <Input
                                 id="name"
-                                name="name"
                                 type="text"
                                 placeholder="John Doe"
-                                value={formData.name}
-                                onChange={handleChange}
+                                {...register('name')}
                                 disabled={isLoading}
                                 className={errors.name ? 'border-destructive' : ''}
                             />
                             {errors.name && (
-                                <p className="text-sm text-destructive">{errors.name}</p>
+                                <p className="text-sm text-destructive">{errors.name.message}</p>
                             )}
                         </div>
 
@@ -150,16 +122,14 @@ export default function Register() {
                             </label>
                             <Input
                                 id="email"
-                                name="email"
                                 type="email"
                                 placeholder="admin@example.com"
-                                value={formData.email}
-                                onChange={handleChange}
+                                {...register('email')}
                                 disabled={isLoading}
                                 className={errors.email ? 'border-destructive' : ''}
                             />
                             {errors.email && (
-                                <p className="text-sm text-destructive">{errors.email}</p>
+                                <p className="text-sm text-destructive">{errors.email.message}</p>
                             )}
                         </div>
 
@@ -170,16 +140,14 @@ export default function Register() {
                             </label>
                             <Input
                                 id="password"
-                                name="password"
                                 type="password"
                                 placeholder="••••••••"
-                                value={formData.password}
-                                onChange={handleChange}
+                                {...register('password')}
                                 disabled={isLoading}
                                 className={errors.password ? 'border-destructive' : ''}
                             />
                             {errors.password && (
-                                <p className="text-sm text-destructive">{errors.password}</p>
+                                <p className="text-sm text-destructive">{errors.password.message}</p>
                             )}
                         </div>
 
@@ -190,16 +158,14 @@ export default function Register() {
                             </label>
                             <Input
                                 id="confirmPassword"
-                                name="confirmPassword"
                                 type="password"
                                 placeholder="••••••••"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
+                                {...register('confirmPassword')}
                                 disabled={isLoading}
                                 className={errors.confirmPassword ? 'border-destructive' : ''}
                             />
                             {errors.confirmPassword && (
-                                <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
                             )}
                         </div>
 
@@ -237,7 +203,7 @@ export default function Register() {
 
                 {/* Footer */}
                 <p className="text-center text-xs text-muted-foreground mt-8">
-                    © 2024 Zabiyo Admin. All rights reserved.
+                    © 2025 Zabiyo Admin. All rights reserved.
                 </p>
             </div>
         </div>

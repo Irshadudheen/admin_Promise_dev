@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
 import { MainLayout } from './components/layout/MainLayout'
 import { ToastProvider } from './components/ui/Toast'
+import { Toaster } from 'sonner'
 import AppSettings from './pages/AppSettings'
 import Roles from './pages/Roles'
 import Students from './pages/Students'
@@ -17,6 +18,7 @@ import Register from './pages/Register'
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" richColors />
       <ToastProvider>
         <Routes>
           {/* Authentication Routes */}

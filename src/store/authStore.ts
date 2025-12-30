@@ -2,13 +2,8 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { AuthStore, AuthState, OtpVerificationBody, ServiceResponse, AuthResponse } from '@/types/auth';
 import { AuthService } from '@/service/authservice';
+import { toast } from 'sonner';
 
-
-
-const toast = {
-  success: (message: string) => console.log('✅', message),
-  error: (message: string) => console.error('❌', message),
-};
 
 const initialState: AuthState = {
   user: null,
@@ -28,14 +23,16 @@ const useAuthStore = create<AuthStore>()(
       (set, get) => ({
         ...initialState,
 
-        login: async ( phone, password) => {
+        login: async (emailOrPhone, password) => {
           set({ isLoading: true, error: null });
-          const { data, error } = await AuthService.loginService({
-            
-            phone,
-            password,
-          
-          });
+
+          // Determine if it's an email or phone
+          const isEmail = emailOrPhone.includes('@');
+          const credentials = isEmail
+            ? { email: emailOrPhone, password }
+            : { phone: emailOrPhone, password };
+
+          const { data, error } = await AuthService.loginService(credentials);
 
           if (error || !data) {
             set({ error: error || 'Login failed', isLoading: false });
@@ -62,28 +59,27 @@ const useAuthStore = create<AuthStore>()(
           return true;
         },
 
-       
 
-       
 
-        register: async (authType, userType, phone, email, password, googleToken) => {
+
+
+        register: async (name, email, password, roleId) => {
           set({ isLoading: true, signUpError: null });
-
+          console.log(roleId,'roleId from store');
           const { data, error } = await AuthService.registerService({
-            authType,
-            userType,
-            phone,
             email,
+            name,
             password,
-            googleToken,
+            roleId,
           });
 
           if (error || !data) {
             set({ signUpError: error || 'Registration failed', isLoading: false });
+            toast.error(error || 'Registration failed');
             return false;
           }
 
-          toast.success('OTP shared successfully');
+          toast.success('Registration submitted successfully');
           return true;
         },
 

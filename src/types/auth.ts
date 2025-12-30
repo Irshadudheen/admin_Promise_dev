@@ -23,12 +23,10 @@ export interface LoginCredentials {
 }
 
 export interface RegisterCredentials {
-    authType: string;
-    userType: string;
-    phone?: string;
-    email?: string;
-    password?: string;
-    googleToken?: string;
+    email: string;
+    name: string;
+    password: string;
+    roleId: string;
 }
 
 export interface OtpVerificationBody {
@@ -66,25 +64,19 @@ export interface AuthState {
 
 export interface AuthActions {
     login: (
-        authType: string,
-        phone: string,
-        password: string,
-        googleId?: string,
-        googleToken?: string,
-        userType?: string
+        emailOrPhone: string,
+        password: string
     ) => Promise<boolean>;
 
-    
+
 
 
 
     register: (
-        authType: string,
-        userType: string,
-        phone: string,
+        name: string,
         email: string,
         password: string,
-        googleToken?: string
+        roleId: string
     ) => Promise<boolean>;
 
     verifyOtp: (body: OtpVerificationBody) => Promise<boolean>;

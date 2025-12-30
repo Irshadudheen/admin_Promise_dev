@@ -22,8 +22,7 @@ const authSlice = createSlice({
       state.user = null;
       state.accessToken = null;
       TokenUtils.removeToken();
-      // NOTE: Side effects like navigation should be handled in middleware or thunks
-      // Keeping this here for backward compatibility, but consider moving to a thunk
+
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
@@ -40,5 +39,5 @@ const authSlice = createSlice({
 export const { setAuth, logout, clearAuth } = authSlice.actions;
 export default authSlice.reducer;
 
-// Type exports for use in components
+
 export type { ReduxAuthState };
