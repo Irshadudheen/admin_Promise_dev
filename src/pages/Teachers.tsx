@@ -201,24 +201,9 @@ export default function Teachers() {
         setIsDeleteDialogOpen(true)
     }
 
-    const getCountryCodeDisplay = (countryCodeId: string) => {
-        const countryCode = countryCodes.find(cc => cc.id === countryCodeId)
-        return countryCode ? countryCode.code : countryCodeId
-    }
-
     const getSchoolNameById = (schoolId: string) => {
         const school = schools.find(s => s.id === schoolId)
         return school ? school.schoolName : schoolId
-    }
-
-    const getClassNameById = (classId: string) => {
-        const classItem = classes.find(c => c.id === classId)
-        return classItem ? classItem.className : classId
-    }
-
-    const getDivisionNameById = (divisionId: string) => {
-        const division = divisions.find(d => d.id === divisionId)
-        return division ? division.gradeName : divisionId
     }
 
     if (isLoading && teachers.length === 0) {

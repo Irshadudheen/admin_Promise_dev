@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import type { AxiosError, AxiosResponse } from "axios";
 import type {
     ServiceResponse,
-    Division,
     DivisionResponse,
     DivisionsListResponse,
     CreateDivisionData,

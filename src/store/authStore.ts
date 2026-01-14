@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import type { AuthStore, AuthState, OtpVerificationBody, ServiceResponse, AuthResponse } from '@/types/auth';
+import type { AuthStore, AuthState } from '@/types/auth';
 import { AuthService } from '@/service/authservice';
 import { toast } from 'sonner';
 

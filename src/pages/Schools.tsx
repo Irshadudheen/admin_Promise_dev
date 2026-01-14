@@ -218,14 +218,14 @@ export default function Schools() {
     const openEditModal = (school: School) => {
         setSelectedSchool(school)
 
-        // Build class IDs and division mappings from school.mappings
-        const selectedClassIds = Array.from(new Set(school.mappings.map(m => m.classId)))
+        // Build class IDs and division mappings from school.gradeClassMappings
+        const selectedClassIds = Array.from(new Set(school.gradeClassMappings.map((m) => m.classId)))
         const classDivisionMappings: { [classId: string]: string[] } = {}
 
-        selectedClassIds.forEach(classId => {
-            const divisionsForClass = school.mappings
-                .filter(m => m.classId === classId)
-                .map(m => m.gradeId)
+        selectedClassIds.forEach((classId: string) => {
+            const divisionsForClass = school.gradeClassMappings
+                .filter((m) => m.classId === classId)
+                .map((m) => m.gradeId)
             classDivisionMappings[classId] = divisionsForClass
         })
 
