@@ -1,11 +1,9 @@
 // Class-related TypeScript type definitions
 
 export interface Class {
-    classId: string;
+    id: string;
     className: string;
-    gradeLevel: string;
     description?: string;
-    schoolId?: string;
     deletedAt: string | null;
     createdAt: string;
     updatedAt: string;
@@ -13,16 +11,14 @@ export interface Class {
 
 export interface CreateClassData {
     className: string;
-    gradeLevel: string;
     description?: string;
-    schoolId?: string;
+
 }
 
 export interface UpdateClassData {
     className?: string;
-    gradeLevel?: string;
     description?: string;
-    schoolId?: string;
+
 }
 
 export interface ClassResponse {

@@ -101,9 +101,9 @@ const useClassStore = create<ClassStore>()(
                 // Update the class in the list
                 set((state) => ({
                     classes: state.classes.map((classItem) =>
-                        classItem.classId === classId ? data.data : classItem
+                        classItem.id === classId ? data.data : classItem
                     ),
-                    selectedClass: state.selectedClass?.classId === classId ? data.data : state.selectedClass,
+                    selectedClass: state.selectedClass?.id === classId ? data.data : state.selectedClass,
                     isLoading: false,
                     error: null,
                 }));
@@ -124,7 +124,7 @@ const useClassStore = create<ClassStore>()(
                 // Update the class in the list (mark as deleted)
                 set((state) => ({
                     classes: state.classes.map((classItem) =>
-                        classItem.classId === classId ? data.data : classItem
+                        classItem.id === classId ? data.data : classItem
                     ),
                     isLoading: false,
                     error: null,

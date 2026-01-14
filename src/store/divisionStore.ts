@@ -101,9 +101,9 @@ const useDivisionStore = create<DivisionStore>()(
                 // Update the division in the list
                 set((state) => ({
                     divisions: state.divisions.map((division) =>
-                        division.gradeId === gradeId ? data.data : division
+                        division.id === gradeId ? data.data : division
                     ),
-                    selectedDivision: state.selectedDivision?.gradeId === gradeId ? data.data : state.selectedDivision,
+                    selectedDivision: state.selectedDivision?.id === gradeId ? data.data : state.selectedDivision,
                     isLoading: false,
                     error: null,
                 }));
@@ -124,7 +124,7 @@ const useDivisionStore = create<DivisionStore>()(
                 // Update the division in the list (mark as deleted)
                 set((state) => ({
                     divisions: state.divisions.map((division) =>
-                        division.gradeId === gradeId ? data.data : division
+                        division.id === gradeId ? data.data : division
                     ),
                     isLoading: false,
                     error: null,

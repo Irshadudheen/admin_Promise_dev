@@ -56,7 +56,7 @@ export default function Grades() {
             return
         }
 
-        const success = await updateDivision(selectedDivision.gradeId, {
+        const success = await updateDivision(selectedDivision.id, {
             gradeName: formData.name.toUpperCase(),
         })
 
@@ -70,7 +70,7 @@ export default function Grades() {
     const handleDelete = async () => {
         if (!selectedDivision) return
 
-        const success = await deleteDivision(selectedDivision.gradeId)
+        const success = await deleteDivision(selectedDivision.id)
 
         if (success) {
             setIsDeleteDialogOpen(false)
@@ -141,13 +141,13 @@ export default function Grades() {
                     </TableHeader>
                     <TableBody>
                         {pagination.currentItems.map((division) => (
-                            <TableRow key={division.gradeId}>
+                            <TableRow key={division.id}>
                                 <TableCell className="font-medium text-lg">{division.gradeName}</TableCell>
                                 <TableCell>{formatDate(division.createdAt)}</TableCell>
                                 <TableCell>
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${division.deletedAt
-                                            ? 'bg-red-100 text-red-800'
-                                            : 'bg-green-100 text-green-800'
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-green-100 text-green-800'
                                         }`}>
                                         {division.deletedAt ? 'Deleted' : 'Active'}
                                     </span>
@@ -195,14 +195,14 @@ export default function Grades() {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
                 {pagination.currentItems.map((division) => (
-                    <div key={division.gradeId} className="bg-white rounded-lg border border-border shadow-sm p-4">
+                    <div key={division.id} className="bg-white rounded-lg border border-border shadow-sm p-4">
                         <div className="flex justify-between items-start mb-3">
                             <div>
                                 <h3 className="font-semibold text-2xl">{division.gradeName}</h3>
                             </div>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${division.deletedAt
-                                    ? 'bg-red-100 text-red-800'
-                                    : 'bg-green-100 text-green-800'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-green-100 text-green-800'
                                 }`}>
                                 {division.deletedAt ? 'Deleted' : 'Active'}
                             </span>

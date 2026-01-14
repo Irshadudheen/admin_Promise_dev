@@ -19,7 +19,7 @@ export default function Classes() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [selectedClass, setSelectedClass] = useState<Class | null>(null)
-    const [formData, setFormData] = useState({ className: '', gradeLevel: '', description: '' })
+    const [formData, setFormData] = useState({ className: '', description: '' })
     const { showToast } = useToast()
 
     // Fetch classes on component mount
@@ -29,7 +29,6 @@ export default function Classes() {
 
     const filteredClasses = classes.filter(cls =>
         cls.className.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cls.gradeLevel.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (cls.description?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     )
 
@@ -44,13 +43,12 @@ export default function Classes() {
 
         const success = await createClass({
             className: formData.className,
-            gradeLevel: formData.gradeLevel,
             description: formData.description || undefined,
         })
 
         if (success) {
             setIsCreateModalOpen(false)
-            setFormData({ className: '', gradeLevel: '', description: '' })
+            setFormData({ className: '', description: '' })
         }
     }
 
@@ -60,28 +58,24 @@ export default function Classes() {
             showToast('error', 'Class name is required')
             return
         }
-        if (!formData.gradeLevel.trim()) {
-            showToast('error', 'Grade level is required')
-            return
-        }
+       
 
-        const success = await updateClass(selectedClass.classId, {
+        const success = await updateClass(selectedClass.id, {
             className: formData.className,
-            gradeLevel: formData.gradeLevel,
             description: formData.description || undefined,
         })
 
         if (success) {
             setIsEditModalOpen(false)
             setSelectedClass(null)
-            setFormData({ className: '', gradeLevel: '', description: '' })
+            setFormData({ className: '', description: '' })
         }
     }
 
     const handleDelete = async () => {
         if (!selectedClass) return
 
-        const success = await deleteClass(selectedClass.classId)
+        const success = await deleteClass(selectedClass.id)
 
         if (success) {
             setIsDeleteDialogOpen(false)
@@ -93,7 +87,6 @@ export default function Classes() {
         setSelectedClass(cls)
         setFormData({ 
             className: cls.className, 
-            gradeLevel: cls.gradeLevel, 
             description: cls.description || '' 
         })
         setIsEditModalOpen(true)
@@ -110,7 +103,7 @@ export default function Classes() {
 
     if (isLoading && classes.length === 0) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center justify-center ">
                 <Loader />
             </div>
         )
@@ -157,7 +150,7 @@ export default function Classes() {
                     </TableHeader>
                     <TableBody>
                         {pagination.currentItems.map((cls) => (
-                            <TableRow key={cls.classId}>
+                            <TableRow key={cls.id}>
                                 <TableCell className="font-medium text-lg">{cls.className}</TableCell>
                               
                                 
@@ -214,11 +207,10 @@ export default function Classes() {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
                 {pagination.currentItems.map((cls) => (
-                    <div key={cls.classId} className="bg-white rounded-lg border border-border shadow-sm p-4">
+                    <div key={cls.id} className="bg-white rounded-lg border border-border shadow-sm p-4">
                         <div className="flex justify-between items-start mb-3">
                             <div>
                                 <h3 className="font-semibold text-xl">{cls.className}</h3>
-                                <p className="text-sm text-muted-foreground">Grade {cls.gradeLevel}</p>
                                 <p className="text-sm text-muted-foreground">{cls.description || '-'}</p>
                             </div>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -318,14 +310,7 @@ export default function Classes() {
                             placeholder="Enter class name"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Grade Level *</label>
-                        <Input
-                            value={formData.gradeLevel}
-                            onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                            placeholder="Enter grade level"
-                        />
-                    </div>
+                   
                     <div>
                         <label className="block text-sm font-medium mb-2">Description</label>
                         <Input

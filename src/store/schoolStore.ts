@@ -1,12 +1,11 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { School, CreateSchoolData, UpdateSchoolData, CountryCode } from '@/types/school';
-import { SchoolService, CountryCodeService } from '@/service/schoolService';
+import type { School, CreateSchoolData, UpdateSchoolData } from '@/types/school';
+import { SchoolService } from '@/service/schoolService';
 
 interface SchoolState {
     schools: School[];
     selectedSchool: School | null;
-    countryCodes: CountryCode[];
     isLoading: boolean;
     error: string | null;
 }
@@ -14,7 +13,6 @@ interface SchoolState {
 interface SchoolActions {
     fetchSchools: () => Promise<void>;
     fetchSchoolById: (schoolId: string) => Promise<void>;
-    fetchCountryCodes: () => Promise<void>;
     createSchool: (data: CreateSchoolData) => Promise<boolean>;
     updateSchool: (schoolId: string, data: UpdateSchoolData) => Promise<boolean>;
     deleteSchool: (schoolId: string) => Promise<boolean>;
@@ -27,7 +25,6 @@ type SchoolStore = SchoolState & SchoolActions;
 const initialState: SchoolState = {
     schools: [],
     selectedSchool: null,
-    countryCodes: [],
     isLoading: false,
     error: null,
 };
@@ -68,19 +65,6 @@ const useSchoolStore = create<SchoolStore>()(
                     selectedSchool: data.data,
                     isLoading: false,
                     error: null,
-                });
-            },
-
-            fetchCountryCodes: async () => {
-                const { data, error } = await CountryCodeService.getAllCountryCodes();
-
-                if (error || !data) {
-                    console.error('Failed to fetch country codes:', error);
-                    return;
-                }
-
-                set({
-                    countryCodes: data.data,
                 });
             },
 

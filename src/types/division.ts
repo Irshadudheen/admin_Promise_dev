@@ -1,7 +1,7 @@
 // Division-related TypeScript type definitions
 
 export interface Division {
-    gradeId: string;
+    id: string;
     gradeName: string;
     schoolId?: string;
     deletedAt: string | null;

@@ -3,14 +3,12 @@ import { toast } from "sonner";
 import type { AxiosError, AxiosResponse } from "axios";
 import type {
     ServiceResponse,
-    School,
     SchoolResponse,
     SchoolsListResponse,
     CreateSchoolData,
     UpdateSchoolData,
-    CountryCode,
-    CountryCodesListResponse,
     CountryCodeResponse,
+    CountryCodesListResponse,
 } from "@/types/school";
 
 // Type for API error response
@@ -42,6 +40,7 @@ const getErrorMessage = (error: unknown, defaultMessage: string): string => {
     return defaultMessage;
 };
 
+// School Service
 export const SchoolService = {
     /**
      * Get all schools
@@ -49,120 +48,150 @@ export const SchoolService = {
     getAllSchools: async (): Promise<ServiceResponse<SchoolsListResponse>> => {
         try {
             const response: AxiosResponse<SchoolsListResponse> = await axiosInstance.get(
-                "/schools"
+                '/schools'
             );
-            return { data: response.data, error: null };
+
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Get schools error:", error);
+            console.error('Get schools error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to fetch schools. Please try again."
+                'Failed to fetch schools. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 
     /**
-     * Get school by ID
-     * @param schoolId - School ID
+     * Get a single school by ID
+     * @param schoolId - The ID of the school to fetch
      */
-    getSchoolById: async (
-        schoolId: string
-    ): Promise<ServiceResponse<SchoolResponse>> => {
+    getSchoolById: async (schoolId: string): Promise<ServiceResponse<SchoolResponse>> => {
         try {
             const response: AxiosResponse<SchoolResponse> = await axiosInstance.get(
                 `/schools/${schoolId}`
             );
-            return { data: response.data, error: null };
+
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Get school error:", error);
+            console.error('Get school error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to fetch school. Please try again."
+                'Failed to fetch school. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 
     /**
      * Create a new school
-     * @param data - School data with mappings
+     * @param schoolData - The school data to create
      */
-    createSchool: async (
-        data: CreateSchoolData
-    ): Promise<ServiceResponse<SchoolResponse>> => {
+    createSchool: async (schoolData: CreateSchoolData): Promise<ServiceResponse<SchoolResponse>> => {
         try {
             const response: AxiosResponse<SchoolResponse> = await axiosInstance.post(
-                "/schools",
-                data
+                '/schools',
+                schoolData
             );
-            toast.success("School created successfully");
-            return { data: response.data, error: null };
+
+            toast.success('School created successfully');
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Create school error:", error);
+            console.error('Create school error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to create school. Please try again."
+                'Failed to create school. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 
     /**
-     * Update a school
-     * @param schoolId - School ID
-     * @param data - Updated school data
+     * Update an existing school
+     * @param schoolId - The ID of the school to update
+     * @param schoolData - The updated school data
      */
     updateSchool: async (
         schoolId: string,
-        data: UpdateSchoolData
+        schoolData: UpdateSchoolData
     ): Promise<ServiceResponse<SchoolResponse>> => {
         try {
             const response: AxiosResponse<SchoolResponse> = await axiosInstance.put(
                 `/schools/${schoolId}`,
-                data
+                schoolData
             );
-            toast.success("School updated successfully");
-            return { data: response.data, error: null };
+
+            toast.success('School updated successfully');
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Update school error:", error);
+            console.error('Update school error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to update school. Please try again."
+                'Failed to update school. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 
     /**
-     * Soft delete a school
-     * @param schoolId - School ID
+     * Delete (soft delete) a school
+     * @param schoolId - The ID of the school to delete
      */
-    deleteSchool: async (
-        schoolId: string
-    ): Promise<ServiceResponse<SchoolResponse>> => {
+    deleteSchool: async (schoolId: string): Promise<ServiceResponse<SchoolResponse>> => {
         try {
             const response: AxiosResponse<SchoolResponse> = await axiosInstance.delete(
                 `/schools/${schoolId}`
             );
-            toast.success("School deleted successfully");
-            return { data: response.data, error: null };
+
+            toast.success('School deleted successfully');
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Delete school error:", error);
+            console.error('Delete school error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to delete school. Please try again."
+                'Failed to delete school. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 };
 
+// Country Code Service
 export const CountryCodeService = {
     /**
      * Get all country codes
@@ -170,116 +199,125 @@ export const CountryCodeService = {
     getAllCountryCodes: async (): Promise<ServiceResponse<CountryCodesListResponse>> => {
         try {
             const response: AxiosResponse<CountryCodesListResponse> = await axiosInstance.get(
-                "/country-codes"
+                '/country-codes'
             );
-            return { data: response.data, error: null };
-        } catch (error) {
-            console.error("Get country codes error:", error);
-            const errorMessage = getErrorMessage(
-                error,
-                "Failed to fetch country codes. Please try again."
-            );
-            toast.error(errorMessage);
-            return { data: null, error: errorMessage };
-        }
-    },
 
-    /**
-     * Get country code by ID
-     * @param id - Country code ID
-     */
-    getCountryCodeById: async (
-        id: string
-    ): Promise<ServiceResponse<CountryCodeResponse>> => {
-        try {
-            const response: AxiosResponse<CountryCodeResponse> = await axiosInstance.get(
-                `/country-codes/${id}`
-            );
-            return { data: response.data, error: null };
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Get country code error:", error);
+            console.error('Get country codes error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to fetch country code. Please try again."
+                'Failed to fetch country codes. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 
     /**
      * Create a new country code
-     * @param data - Country code data
+     * @param countryCodeData - The country code data to create
      */
-    createCountryCode: async (
-        data: { code: string; digitCount: number; flagImage: string }
-    ): Promise<ServiceResponse<CountryCodeResponse>> => {
+    createCountryCode: async (countryCodeData: {
+        code: string;
+        digitCount: number;
+        flagImage: string;
+    }): Promise<ServiceResponse<CountryCodeResponse>> => {
         try {
             const response: AxiosResponse<CountryCodeResponse> = await axiosInstance.post(
-                "/country-codes",
-                data
+                '/country-codes',
+                countryCodeData
             );
-            toast.success("Country code created successfully");
-            return { data: response.data, error: null };
+
+            toast.success('Country code created successfully');
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Create country code error:", error);
+            console.error('Create country code error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to create country code. Please try again."
+                'Failed to create country code. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 
     /**
-     * Update a country code
-     * @param id - Country code ID
-     * @param data - Updated country code data
+     * Update an existing country code
+     * @param id - The ID of the country code to update
+     * @param countryCodeData - The updated country code data
      */
     updateCountryCode: async (
         id: string,
-        data: { code?: string; digitCount?: number; flagImage?: string }
+        countryCodeData: {
+            code: string;
+            digitCount: number;
+            flagImage: string;
+        }
     ): Promise<ServiceResponse<CountryCodeResponse>> => {
         try {
             const response: AxiosResponse<CountryCodeResponse> = await axiosInstance.put(
                 `/country-codes/${id}`,
-                data
+                countryCodeData
             );
-            toast.success("Country code updated successfully");
-            return { data: response.data, error: null };
+
+            toast.success('Country code updated successfully');
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Update country code error:", error);
+            console.error('Update country code error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to update country code. Please try again."
+                'Failed to update country code. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 
     /**
      * Delete a country code
-     * @param id - Country code ID
+     * @param id - The ID of the country code to delete
      */
-    deleteCountryCode: async (
-        id: string
-    ): Promise<ServiceResponse<CountryCodeResponse>> => {
+    deleteCountryCode: async (id: string): Promise<ServiceResponse<CountryCodeResponse>> => {
         try {
             const response: AxiosResponse<CountryCodeResponse> = await axiosInstance.delete(
                 `/country-codes/${id}`
             );
-            toast.success("Country code deleted successfully");
-            return { data: response.data, error: null };
+
+            toast.success('Country code deleted successfully');
+            return {
+                data: response.data,
+                error: null,
+            };
         } catch (error) {
-            console.error("Delete country code error:", error);
+            console.error('Delete country code error:', error);
             const errorMessage = getErrorMessage(
                 error,
-                "Failed to delete country code. Please try again."
+                'Failed to delete country code. Please try again.'
             );
             toast.error(errorMessage);
-            return { data: null, error: errorMessage };
+            return {
+                data: null,
+                error: errorMessage,
+            };
         }
     },
 };

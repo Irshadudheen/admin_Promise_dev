@@ -12,68 +12,53 @@ import { Loader } from '@/components/ui/Loader'
 import useSchoolStore from '@/store/schoolStore'
 import useClassStore from '@/store/classStore'
 import useDivisionStore from '@/store/divisionStore'
+import useCountryCodeStore from '@/store/countryCodeStore'
 import type { School, ClassGradeMappingInput } from '@/types/school'
 
 interface FormData {
-    schoolName: string;
-    schoolCode: string;
-    phone: string;
-    address: string;
-    countryCodeId: string;
-}
-
-interface ClassDivisionMapping {
-    classId: string;
-    className: string;
-    selectedDivisions: Set<string>;
+    schoolName: string
+    schoolCode: string
+    countryCodeId: string
+    phone: string
+    address: string
+    selectedClassIds: string[]
+    classDivisionMappings: { [classId: string]: string[] } // classId -> divisionIds[]
 }
 
 export default function Schools() {
-    const {
-        schools,
-        countryCodes,
-        isLoading,
-        fetchSchools,
-        fetchCountryCodes,
-        createSchool,
-        updateSchool,
-        deleteSchool
-    } = useSchoolStore()
-
+    const { schools, isLoading, fetchSchools, createSchool, updateSchool, deleteSchool } = useSchoolStore()
     const { classes, fetchClasses } = useClassStore()
     const { divisions, fetchDivisions } = useDivisionStore()
+    const { countryCodes, fetchCountryCodes } = useCountryCodeStore()
 
     const [searchTerm, setSearchTerm] = useState('')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
-
     const [formData, setFormData] = useState<FormData>({
         schoolName: '',
         schoolCode: '',
+        countryCodeId: '',
         phone: '',
         address: '',
-        countryCodeId: '',
+        selectedClassIds: [],
+        classDivisionMappings: {}
     })
-
-    const [classDivisionMappings, setClassDivisionMappings] = useState<ClassDivisionMapping[]>([])
-    const [currentClassSelection, setCurrentClassSelection] = useState<string>('')
-    const [currentDivisionSelections, setCurrentDivisionSelections] = useState<Set<string>>(new Set())
     const { showToast } = useToast()
 
     // Fetch data on component mount
     useEffect(() => {
         fetchSchools()
-        fetchCountryCodes()
         fetchClasses()
         fetchDivisions()
-    }, [fetchSchools, fetchCountryCodes, fetchClasses, fetchDivisions])
+        fetchCountryCodes()
+    }, [fetchSchools, fetchClasses, fetchDivisions, fetchCountryCodes])
 
     const filteredSchools = schools.filter(school =>
         school.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         school.schoolCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        school.address.toLowerCase().includes(searchTerm.toLowerCase())
+        (school.address?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     )
 
     const pagination = usePagination({ items: filteredSchools, initialItemsPerPage: 10 })
@@ -82,135 +67,98 @@ export default function Schools() {
         setFormData({
             schoolName: '',
             schoolCode: '',
+            countryCodeId: '',
             phone: '',
             address: '',
-            countryCodeId: '',
+            selectedClassIds: [],
+            classDivisionMappings: {}
         })
-        setClassDivisionMappings([])
-        setCurrentClassSelection('')
-        setCurrentDivisionSelections(new Set())
     }
 
+    const handleClassSelect = (classId: string) => {
+        const isSelected = formData.selectedClassIds.includes(classId)
 
+        if (isSelected) {
+            // Remove class and its division mappings
+            const newSelectedClassIds = formData.selectedClassIds.filter(id => id !== classId)
+            const newMappings = { ...formData.classDivisionMappings }
+            delete newMappings[classId]
 
-    const handleToggleClass = (classId: string, className: string) => {
-        const exists = classDivisionMappings.find(m => m.classId === classId)
-
-        if (exists) {
-            // Remove class
-            setClassDivisionMappings(classDivisionMappings.filter(m => m.classId !== classId))
-            setExpandedClasses(prev => {
-                const newSet = new Set(prev)
-                newSet.delete(classId)
-                return newSet
+            setFormData({
+                ...formData,
+                selectedClassIds: newSelectedClassIds,
+                classDivisionMappings: newMappings
             })
         } else {
             // Add class
-            setClassDivisionMappings([
-                ...classDivisionMappings,
-                {
-                    classId,
-                    className,
-                    selectedDivisions: new Set()
+            setFormData({
+                ...formData,
+                selectedClassIds: [...formData.selectedClassIds, classId],
+                classDivisionMappings: {
+                    ...formData.classDivisionMappings,
+                    [classId]: []
                 }
-            ])
+            })
         }
     }
 
+    const handleDivisionToggle = (classId: string, divisionId: string) => {
+        const currentDivisions = formData.classDivisionMappings[classId] || []
+        const isSelected = currentDivisions.includes(divisionId)
 
+        const newDivisions = isSelected
+            ? currentDivisions.filter(id => id !== divisionId)
+            : [...currentDivisions, divisionId]
 
-    const handleAddMapping = () => {
-        if (!currentClassSelection || currentDivisionSelections.size === 0) {
-            showToast('error', 'Please select a class and at least one division')
-            return
-        }
-
-        const selectedClass = classes.find(c => c.classId === currentClassSelection)
-        if (!selectedClass) return
-
-        // Check if this class already has a mapping
-        const existingIndex = classDivisionMappings.findIndex(m => m.classId === currentClassSelection)
-
-        if (existingIndex >= 0) {
-            // Update existing mapping by merging divisions
-            const updatedMappings = [...classDivisionMappings]
-            const existingDivisions = updatedMappings[existingIndex].selectedDivisions
-            const mergedDivisions = new Set([...existingDivisions, ...currentDivisionSelections])
-            updatedMappings[existingIndex] = {
-                ...updatedMappings[existingIndex],
-                selectedDivisions: mergedDivisions
+        setFormData({
+            ...formData,
+            classDivisionMappings: {
+                ...formData.classDivisionMappings,
+                [classId]: newDivisions
             }
-            setClassDivisionMappings(updatedMappings)
-            showToast('success', `Updated divisions for ${selectedClass.className}`)
-        } else {
-            // Add new mapping
-            setClassDivisionMappings([
-                ...classDivisionMappings,
-                {
-                    classId: currentClassSelection,
-                    className: selectedClass.className,
-                    selectedDivisions: new Set(currentDivisionSelections)
-                }
-            ])
-            showToast('success', `Added ${selectedClass.className} with ${currentDivisionSelections.size} division(s)`)
-        }
-
-        // Reset current selections
-        setCurrentClassSelection('')
-        setCurrentDivisionSelections(new Set())
-    }
-
-    const handleRemoveMapping = (index: number) => {
-        const mapping = classDivisionMappings[index]
-        setClassDivisionMappings(classDivisionMappings.filter((_, i) => i !== index))
-        showToast('success', `Removed ${mapping.className} mapping`)
-    }
-
-    const validateForm = (): boolean => {
-        if (!formData.schoolName.trim()) {
-            showToast('error', 'School name is required')
-            return false
-        }
-        if (!formData.schoolCode.trim()) {
-            showToast('error', 'School code is required')
-            return false
-        }
-        if (!formData.phone.trim()) {
-            showToast('error', 'Phone number is required')
-            return false
-        }
-        if (!formData.address.trim()) {
-            showToast('error', 'Address is required')
-            return false
-        }
-        if (!formData.countryCodeId) {
-            showToast('error', 'Country code is required')
-            return false
-        }
-        return true
+        })
     }
 
     const buildMappingsArray = (): ClassGradeMappingInput[] => {
         const mappings: ClassGradeMappingInput[] = []
-        classDivisionMappings.forEach(classMapping => {
-            classMapping.selectedDivisions.forEach(gradeId => {
-                mappings.push({
-                    classId: classMapping.classId,
-                    gradeId: gradeId
-                })
+
+        formData.selectedClassIds.forEach(classId => {
+            const divisionIds = formData.classDivisionMappings[classId] || []
+            divisionIds.forEach(gradeId => {
+                mappings.push({ classId, gradeId })
             })
         })
+
         return mappings
     }
 
     const handleCreate = async () => {
-        if (!validateForm()) return
+        if (!formData.schoolName.trim()) {
+            showToast('error', 'School name is required')
+            return
+        }
+        if (!formData.schoolCode.trim()) {
+            showToast('error', 'School code is required')
+            return
+        }
+        if (!formData.countryCodeId) {
+            showToast('error', 'Country code is required')
+            return
+        }
+        if (!formData.phone.trim()) {
+            showToast('error', 'Phone number is required')
+            return
+        }
 
         const mappings = buildMappingsArray()
 
         const success = await createSchool({
-            ...formData,
-            mappings: mappings.length > 0 ? mappings : undefined
+            schoolName: formData.schoolName,
+            schoolCode: formData.schoolCode,
+            countryCodeId: formData.countryCodeId,
+            phone: formData.phone,
+            address: formData.address || '',
+            gradeClassMappings: mappings
         })
 
         if (success) {
@@ -221,13 +169,32 @@ export default function Schools() {
 
     const handleEdit = async () => {
         if (!selectedSchool) return
-        if (!validateForm()) return
+        if (!formData.schoolName.trim()) {
+            showToast('error', 'School name is required')
+            return
+        }
+        if (!formData.schoolCode.trim()) {
+            showToast('error', 'School code is required')
+            return
+        }
+        if (!formData.countryCodeId) {
+            showToast('error', 'Country code is required')
+            return
+        }
+        if (!formData.phone.trim()) {
+            showToast('error', 'Phone number is required')
+            return
+        }
 
         const mappings = buildMappingsArray()
 
         const success = await updateSchool(selectedSchool.id, {
-            ...formData,
-            mappings: mappings.length > 0 ? mappings : undefined
+            schoolName: formData.schoolName,
+            schoolCode: formData.schoolCode,
+            countryCodeId: formData.countryCodeId,
+            phone: formData.phone,
+            address: formData.address || '',
+            gradeClassMappings: mappings
         })
 
         if (success) {
@@ -250,36 +217,27 @@ export default function Schools() {
 
     const openEditModal = (school: School) => {
         setSelectedSchool(school)
+
+        // Build class IDs and division mappings from school.mappings
+        const selectedClassIds = Array.from(new Set(school.mappings.map(m => m.classId)))
+        const classDivisionMappings: { [classId: string]: string[] } = {}
+
+        selectedClassIds.forEach(classId => {
+            const divisionsForClass = school.mappings
+                .filter(m => m.classId === classId)
+                .map(m => m.gradeId)
+            classDivisionMappings[classId] = divisionsForClass
+        })
+
         setFormData({
             schoolName: school.schoolName,
             schoolCode: school.schoolCode,
-            phone: school.phone,
-            address: school.address,
             countryCodeId: school.countryCodeId,
+            phone: school.phone,
+            address: school.address || '',
+            selectedClassIds,
+            classDivisionMappings
         })
-
-        // Build class-division mappings from school data
-        if (school.mappings) {
-            const mappingsMap = new Map<string, ClassDivisionMapping>()
-
-            school.mappings.forEach(mapping => {
-                if (!mapping.class || !mapping.grade) return
-
-                if (!mappingsMap.has(mapping.classId)) {
-                    mappingsMap.set(mapping.classId, {
-                        classId: mapping.classId,
-                        className: mapping.class.className,
-                        selectedDivisions: new Set()
-                    })
-                }
-
-                const classMapping = mappingsMap.get(mapping.classId)!
-                classMapping.selectedDivisions.add(mapping.gradeId)
-            })
-
-            setClassDivisionMappings(Array.from(mappingsMap.values()))
-        }
-
         setIsEditModalOpen(true)
     }
 
@@ -288,25 +246,30 @@ export default function Schools() {
         setIsDeleteDialogOpen(true)
     }
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString()
+    const getCountryCodeDisplay = (countryCodeId: string) => {
+        const countryCode = countryCodes.find(cc => cc.id === countryCodeId)
+        return countryCode ? countryCode.code : countryCodeId
+    }
+
+    const getClassNameById = (classId: string) => {
+        const classItem = classes.find(c => c.id === classId)
+        return classItem ? classItem.className : classId
     }
 
     if (isLoading && schools.length === 0) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center justify-center">
                 <Loader />
             </div>
         )
     }
 
-    const SchoolFormContent = () => (
+    const renderSchoolForm = () => (
         <div className="space-y-6 text-left">
-            {/* Basic Information */}
-            <div className="space-y-4">
-                <h3 className="font-semibold text-lg border-b pb-2">Basic Information</h3>
-
-                <div className="grid grid-cols-2 gap-4">
+            {/* School Details Section */}
+            <div>
+                <h3 className="text-lg font-semibold mb-4">School Details</h3>
+                <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">School Name *</label>
                         <Input
@@ -321,12 +284,10 @@ export default function Schools() {
                         <Input
                             value={formData.schoolCode}
                             onChange={(e) => setFormData({ ...formData, schoolCode: e.target.value })}
-                            placeholder="Enter unique code"
+                            placeholder="Enter school code"
                         />
                     </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">Country Code *</label>
                         <select
@@ -335,9 +296,9 @@ export default function Schools() {
                             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         >
                             <option value="">Select country code</option>
-                            {countryCodes.map(cc => (
+                            {countryCodes.map((cc) => (
                                 <option key={cc.id} value={cc.id}>
-                                    {cc.code} ({cc.digitCount} digits)
+                                    {cc.code} (+{cc.digitCount} digits)
                                 </option>
                             ))}
                         </select>
@@ -346,132 +307,104 @@ export default function Schools() {
                     <div>
                         <label className="block text-sm font-medium mb-2">Phone Number *</label>
                         <Input
+                            type="tel"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             placeholder="Enter phone number"
-                            type="tel"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Address</label>
+                        <textarea
+                            value={formData.address}
+                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            placeholder="Enter school address"
+                            className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
                         />
                     </div>
                 </div>
-
-                <div>
-                    <label className="block text-sm font-medium mb-2">Address *</label>
-                    <Input
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        placeholder="Enter school address"
-                    />
-                </div>
             </div>
 
-            {/* Class-Division Mappings */}
-            <div className="space-y-4">
-                <h3 className="font-semibold text-lg border-b pb-2">Class & Division Mappings (Optional)</h3>
-
-                {/* Add New Mapping Section */}
-                <div className="bg-gray-50 border border-border rounded-lg p-4 space-y-3">
-                    <p className="text-sm font-medium">Add Class-Division Mapping</p>
-
-                    {/* Step 1: Select Class */}
-                    <div>
-                        <label className="block text-sm font-medium mb-2">1. Select Class</label>
-                        <select
-                            value={currentClassSelection}
-                            onChange={(e) => {
-                                setCurrentClassSelection(e.target.value)
-                                setCurrentDivisionSelections(new Set())
-                            }}
-                            className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="">Choose a class...</option>
-                            {classes.filter(c => !c.deletedAt).map(cls => (
-                                <option key={cls.classId} value={cls.classId}>
-                                    {cls.className}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Step 2: Select Divisions (only shown when class is selected) */}
-                    {currentClassSelection && (
-                        <div>
-                            <label className="block text-sm font-medium mb-2">2. Select Divisions for this class</label>
-                            <div className="grid grid-cols-3 gap-2 p-3 border border-border rounded-md bg-white max-h-[150px] overflow-y-auto">
-                                {divisions.filter(d => !d.deletedAt).map(div => (
-                                    <label key={div.gradeId} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-gray-50 p-1 rounded">
-                                        <input
-                                            type="checkbox"
-                                            checked={currentDivisionSelections.has(div.gradeId)}
-                                            onChange={(e) => {
-                                                const newSelections = new Set(currentDivisionSelections)
-                                                if (e.target.checked) {
-                                                    newSelections.add(div.gradeId)
-                                                } else {
-                                                    newSelections.delete(div.gradeId)
-                                                }
-                                                setCurrentDivisionSelections(newSelections)
-                                            }}
-                                            className="w-4 h-4"
-                                        />
-                                        <span>{div.gradeName}</span>
-                                    </label>
-                                ))}
+            {/* Class Assignment Section */}
+            <div>
+                <h3 className="text-lg font-semibold mb-4">Class Assignment</h3>
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium mb-2">Select Classes</label>
+                    <div className="border border-border rounded-md p-3 max-h-48 overflow-y-auto">
+                        {classes.filter(c => !c.deletedAt).map((classItem) => (
+                            <div key={classItem.id} className="flex items-center mb-2">
+                                <input
+                                    type="checkbox"
+                                    id={`class-${classItem.id}`}
+                                    checked={formData.selectedClassIds.includes(classItem.id)}
+                                    onChange={() => handleClassSelect(classItem.id)}
+                                    className="mr-2 w-4 h-4"
+                                />
+                                <label htmlFor={`class-${classItem.id}`} className="cursor-pointer">
+                                    {classItem.className}
+                                </label>
                             </div>
-                            {currentDivisionSelections.size > 0 && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {currentDivisionSelections.size} division(s) selected
-                                </p>
-                            )}
-                        </div>
-                    )}
+                        ))}
+                    </div>
 
-                    {/* Step 3: Add Button */}
-                    {currentClassSelection && currentDivisionSelections.size > 0 && (
-                        <Button
-                            type="button"
-                            onClick={handleAddMapping}
-                            className="w-full"
-                            variant="outline"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add This Mapping
-                        </Button>
-                    )}
-                </div>
-
-                {/* Display Added Mappings */}
-                {classDivisionMappings.length > 0 && (
-                    <div className="space-y-2">
-                        <p className="text-sm font-medium">Added Mappings ({classDivisionMappings.length})</p>
-                        <div className="space-y-2">
-                            {classDivisionMappings.map((mapping, index) => (
-                                <div key={index} className="flex items-start justify-between p-3 border border-border rounded-lg bg-white">
-                                    <div className="flex-1">
-                                        <p className="font-medium text-sm">{mapping.className}</p>
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                            {Array.from(mapping.selectedDivisions).map(divId => {
-                                                const div = divisions.find(d => d.gradeId === divId)
-                                                return div ? (
-                                                    <span key={divId} className="inline-flex items-center px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
-                                                        {div.gradeName}
-                                                    </span>
-                                                ) : null
-                                            })}
-                                        </div>
-                                    </div>
+                    {/* Selected Classes Display */}
+                    {formData.selectedClassIds.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                            {formData.selectedClassIds.map(id => (
+                                <span
+                                    key={id}
+                                    className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                                >
+                                    {getClassNameById(id)}
                                     <button
-                                        type="button"
-                                        onClick={() => handleRemoveMapping(index)}
-                                        className="ml-2 p-1 hover:bg-red-50 rounded text-red-600"
+                                        onClick={() => handleClassSelect(id)}
+                                        className="hover:bg-primary/20 rounded-full p-0.5"
                                     >
-                                        <X className="w-4 h-4" />
+                                        <X className="w-3 h-3" />
                                     </button>
-                                </div>
+                                </span>
                             ))}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
+
+            {/* Division Mapping Section */}
+            {formData.selectedClassIds.length > 0 && (
+                <div>
+                    <h3 className="text-lg font-semibold mb-4">Division Mapping</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Select divisions for each class
+                    </p>
+                    <div className="space-y-4">
+                        {formData.selectedClassIds.map(classId => (
+                            <div key={classId} className="border border-border rounded-md p-4">
+                                <h4 className="font-medium mb-3">{getClassNameById(classId)}</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                    {divisions.filter(d => !d.deletedAt).map((division) => (
+                                        <div key={division.id} className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                id={`division-${classId}-${division.id}`}
+                                                checked={(formData.classDivisionMappings[classId] || []).includes(division.id)}
+                                                onChange={() => handleDivisionToggle(classId, division.id)}
+                                                className="mr-2 w-4 h-4"
+                                            />
+                                            <label
+                                                htmlFor={`division-${classId}-${division.id}`}
+                                                className="cursor-pointer text-sm"
+                                            >
+                                                {division.gradeName}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     )
 
@@ -480,7 +413,7 @@ export default function Schools() {
             {/* Header */}
             <div className="mb-6">
                 <h1 className="text-3xl font-bold text-foreground mb-2">Schools Management</h1>
-                <p className="text-muted-foreground">Manage school information and class-division mappings</p>
+                <p className="text-muted-foreground">Manage schools with class and division assignments</p>
             </div>
 
             {/* Actions Bar */}
@@ -508,10 +441,10 @@ export default function Schools() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>School Name</TableHead>
-                            <TableHead>School Code</TableHead>
+                            <TableHead>Code</TableHead>
                             <TableHead>Phone</TableHead>
+                            <TableHead>Country Code</TableHead>
                             <TableHead>Address</TableHead>
-                            <TableHead>Classes</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -522,16 +455,8 @@ export default function Schools() {
                                 <TableCell className="font-medium">{school.schoolName}</TableCell>
                                 <TableCell>{school.schoolCode}</TableCell>
                                 <TableCell>{school.phone}</TableCell>
-                                <TableCell className="max-w-[200px] truncate">{school.address}</TableCell>
-                                <TableCell>
-                                    {school.mappings && school.mappings.length > 0 ? (
-                                        <span className="text-sm text-muted-foreground">
-                                            {school.mappings.length} mapping(s)
-                                        </span>
-                                    ) : (
-                                        <span className="text-sm text-muted-foreground">No mappings</span>
-                                    )}
-                                </TableCell>
+                                <TableCell>{getCountryCodeDisplay(school.countryCodeId)}</TableCell>
+                                <TableCell className="max-w-xs truncate">{school.address || '-'}</TableCell>
                                 <TableCell>
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${school.deletedAt
                                         ? 'bg-red-100 text-red-800'
@@ -597,22 +522,9 @@ export default function Schools() {
                             </span>
                         </div>
                         <div className="space-y-2 text-sm mb-4">
-                            <div>
-                                <span className="text-muted-foreground">Phone:</span>
-                                <p className="font-medium">{school.phone}</p>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground">Address:</span>
-                                <p className="font-medium">{school.address}</p>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground">Mappings:</span>
-                                <p className="font-medium">
-                                    {school.mappings && school.mappings.length > 0
-                                        ? `${school.mappings.length} class-division mapping(s)`
-                                        : 'No mappings'}
-                                </p>
-                            </div>
+                            <div><strong>Phone:</strong> {school.phone}</div>
+                            <div><strong>Country Code:</strong> {getCountryCodeDisplay(school.countryCodeId)}</div>
+                            <div><strong>Address:</strong> {school.address || '-'}</div>
                         </div>
                         {!school.deletedAt && (
                             <div className="flex gap-2">
@@ -650,7 +562,6 @@ export default function Schools() {
                     resetForm()
                 }}
                 title="Create New School"
-                size="lg"
                 footer={
                     <div className="flex gap-3 justify-end">
                         <Button variant="outline" onClick={() => {
@@ -663,7 +574,7 @@ export default function Schools() {
                     </div>
                 }
             >
-                <SchoolFormContent />
+                {renderSchoolForm()}
             </Modal>
 
             {/* Edit Modal */}
@@ -675,7 +586,6 @@ export default function Schools() {
                     resetForm()
                 }}
                 title="Edit School"
-                size="lg"
                 footer={
                     <div className="flex gap-3 justify-end">
                         <Button variant="outline" onClick={() => {
@@ -689,7 +599,7 @@ export default function Schools() {
                     </div>
                 }
             >
-                <SchoolFormContent />
+                {renderSchoolForm()}
             </Modal>
 
             {/* Delete Confirmation */}

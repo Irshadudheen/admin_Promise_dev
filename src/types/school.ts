@@ -20,7 +20,7 @@ export interface School {
     createdAt: string;
     updatedAt: string;
     countryCode?: CountryCode;
-    mappings?: SchoolClassGradeMapping[];
+    gradeClassMappings: SchoolClassGradeMapping[];
 }
 
 export interface SchoolClassGradeMapping {
@@ -53,7 +53,7 @@ export interface CreateSchoolData {
     phone: string;
     address: string;
     countryCodeId: string;
-    mappings?: ClassGradeMappingInput[];
+    gradeClassMappings: ClassGradeMappingInput[];
 }
 
 export interface UpdateSchoolData {
@@ -62,7 +62,7 @@ export interface UpdateSchoolData {
     phone?: string;
     address?: string;
     countryCodeId?: string;
-    mappings?: ClassGradeMappingInput[];
+    gradeClassMappings?: ClassGradeMappingInput[];
 }
 
 export interface SchoolResponse {
